@@ -1,23 +1,32 @@
-﻿using UnityEngine;
+﻿
+/********************************************************************
+created:    2017-08-03
+author:     lixianmin
+
+*********************************************************************/
+using UnityEngine;
 using UnityEditor;
 using UnityEditor.UI;
 
-[CustomEditor(typeof(InlineSprite), false)]
-[CanEditMultipleObjects]
-public class InlineSpriteEditor : GraphicEditor
+namespace Unique.UI
 {
-    protected override void OnEnable()
+    [CustomEditor(typeof(InlineSprite), false)]
+    [CanEditMultipleObjects]
+    public class InlineSpriteEditor : GraphicEditor
     {
-       
-    }
+        protected override void OnEnable()
+        {
 
-    public override void OnInspectorGUI()
-    {
-        
-    }
+        }
 
-    protected virtual void OnDisable()
-    {
-        
+        public override void OnInspectorGUI()
+        {
+
+        }
+
+        protected override void OnDisable ()
+        {
+
+        }
     }
 }

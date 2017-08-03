@@ -1,76 +1,85 @@
-﻿using UnityEngine;
+﻿
+/********************************************************************
+created:    2017-08-03
+author:     lixianmin
+
+*********************************************************************/
+using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-/// <summary>
-/// 表情渲染数据
-/// </summary>
-public class InlineSprite : MaskableGraphic
+namespace Unique.UI
 {
-    [HideInInspector]
-    public InlineSpriteAsset inlineSpriteAsset;
-
-    public override Texture mainTexture
+    /// <summary>
+    /// 表情渲染数据
+    /// </summary>
+    public class InlineSprite : MaskableGraphic
     {
-        get
-        {
-            if (inlineSpriteAsset == null)
-            {
-                return s_WhiteTexture;
-            }
+        [HideInInspector]
+        public InlineSpriteAsset inlineSpriteAsset;
 
-            if (inlineSpriteAsset.TextureSource == null)
+        public override Texture mainTexture
+        {
+            get
             {
-                Debug.LogError("InlineSpriteGraphic: SpriteAsset.texSource is null");
-                return s_WhiteTexture;
-            }
-            else
-            {
-                return inlineSpriteAsset.TextureSource;
+                if (inlineSpriteAsset == null)
+                {
+                    return s_WhiteTexture;
+                }
+
+                if (inlineSpriteAsset.TextureSource == null)
+                {
+                    Debug.LogError("InlineSpriteGraphic: SpriteAsset.texSource is null");
+                    return s_WhiteTexture;
+                }
+                else
+                {
+                    return inlineSpriteAsset.TextureSource;
+                }
             }
         }
-    }
 
-    protected override void Awake()
-    {
-        if (inlineSpriteAsset != null && inlineSpriteAsset.TextureSource != null)
+        protected override void Awake()
         {
-            return;
+            if (inlineSpriteAsset != null && inlineSpriteAsset.TextureSource != null)
+            {
+                return;
+            }
+
+            RichTextManager.Instance.RebulidSpriteData();
+
+            inlineSpriteAsset = RichTextManager.Instance.InlineSpriteAsset;
+
+            UpdateMaterial();
+
+            transform.localPosition = new Vector3(1000,1000,1000);
+
+            base.Awake();
         }
 
-        InlineTextManager.Instance.RebulidSpriteData();
+        public SpriteAssetInfo GetSpriteInfo(int index)
+        {
+            return RichTextManager.Instance.GetSpriteInfo(index);
+        }
 
-        inlineSpriteAsset = InlineTextManager.Instance.InlineSpriteAsset;
+        public SpriteAssetInfo GetSpriteInfo(string name)
+        {
+            return RichTextManager.Instance.GetSpriteInfo(name);
+        }
 
-        UpdateMaterial();
+        public List<SpriteAssetInfo> GetSpriteInfosFromPrefix(string namePrefix)
+        {
+            return RichTextManager.Instance.GetSpriteInfosFromPrefix(namePrefix);
+        }
 
-        transform.localPosition = new Vector3(1000,1000,1000);
+        public List<string> GetSpriteNamesFromPrefix(string namePrefix)
+        {
+            return RichTextManager.Instance.GetSpriteNamesFromPrefix(namePrefix);
+        }
 
-        base.Awake();
-    }
-
-    public SpriteAssetInfo GetSpriteInfo(int index)
-    {
-        return InlineTextManager.Instance.GetSpriteInfo(index);
-    }
-
-    public SpriteAssetInfo GetSpriteInfo(string name)
-    {
-        return InlineTextManager.Instance.GetSpriteInfo(name);
-    }
-
-    public List<SpriteAssetInfo> GetSpriteInfosFromPrefix(string namePrefix)
-    {
-        return InlineTextManager.Instance.GetSpriteInfosFromPrefix(namePrefix);
-    }
-
-    public List<string> GetSpriteNamesFromPrefix(string namePrefix)
-    {
-        return InlineTextManager.Instance.GetSpriteNamesFromPrefix(namePrefix);
-    }
-
-    public new void UpdateMaterial()
-    {
-       base.UpdateMaterial();
+        public new void UpdateMaterial()
+        {
+            base.UpdateMaterial();
+        }
     }
 }
