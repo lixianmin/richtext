@@ -53,8 +53,6 @@ namespace Unique.UI
             UpdateMaterial();
 
             transform.localPosition = new Vector3(1000,1000,1000);
-
-            base.Awake();
         }
 
         public SpriteAssetInfo GetSpriteInfo (int index)
@@ -67,15 +65,9 @@ namespace Unique.UI
             return RichTextManager.Instance.GetSpriteInfo(name);
         }
 
-        public List<string> GetSpriteNamesFromPrefix (string namePrefix)
+        public string[] GetSpriteNamesFromPrefix (string namePrefix)
         {
             return RichTextManager.Instance.GetSpriteNamesFromPrefix(namePrefix);
-        }
-
-        public new void UpdateMaterial()
-        {
-//            SetMaterialDirty();
-//            base.UpdateMaterial();
         }
     }
 }

@@ -185,23 +185,20 @@ namespace Unique.UI
 
             var indexText = 0;
             int index = 0;
-            foreach (Match match in _hrefRegex.Matches(strText))
+            foreach (Match match in HrefTagInfo.GetTextMatches(strText))
             {
-                _sbTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
+                var notMatchText = strText.Substring(indexText, match.Index - indexText);
+                _sbTextBuilder.Append(notMatchText);
 
-                if (index + 1 > _hrefTagInfos.Count)
-                {
-                    var temp = new HrefTagInfo();
-                    _hrefTagInfos.Add(temp);
-                }
+                _hrefTagInfos.EnsureSizeEx(index+1);
+                HrefTagInfo hrefInfo = _hrefTagInfos[index] ?? (_hrefTagInfos[index] = new HrefTagInfo());
 
-                HrefTagInfo hrefInfo = _hrefTagInfos[index];
-
+                var groups = match.Groups;
                 hrefInfo.StartIndex = _sbTextBuilder.Length;
-                hrefInfo.EndIndex = _sbTextBuilder.Length + match.Groups[2].Length;
-                hrefInfo.Name = match.Groups[1].Value;
+                hrefInfo.EndIndex = _sbTextBuilder.Length + groups[2].Length;
+                hrefInfo.Name = groups[1].Value;
 
-                _sbTextBuilder.Append(match.Groups[2].Value);
+                _sbTextBuilder.Append(groups[2].Value);
                 indexText = match.Index + match.Length;
                 index ++;
             }
@@ -246,16 +243,16 @@ namespace Unique.UI
                 return;
             }
 
-            if (_animSpriteTagList == null)
+            if (_spriteTagList == null)
             {
-                _animSpriteTagList = new List<SpriteTagInfo>();
+                _spriteTagList = new List<SpriteTagInfo>();
             }
 
-            if (string.IsNullOrEmpty(strText) || -1 == strText.IndexOf("quad") )
+            if (string.IsNullOrEmpty(strText) || -1 == strText.IndexOf("quad"))
             {
-                for (int i = 0; i < _animSpriteTagList.Count; ++i)
+                for (int i = 0; i < _spriteTagList.Count; ++i)
                 {
-                    _animSpriteTagList[i].Reset();
+                    _spriteTagList[i].Reset();
                 }
                 return;
             }
@@ -263,17 +260,19 @@ namespace Unique.UI
             int index = 0;
             foreach (Match match in _constSpriteTagRegex.Matches(strText))
             {
-                var matchGroups = match.Groups;
-                List<string> names = _inlineSprite.GetSpriteNamesFromPrefix(matchGroups[1].Value);
-                if (names != null && names.Count > 0)
+                var groups = match.Groups;
+                var name = groups[1].Value;
+
+                if (!string.IsNullOrEmpty(name))
                 {
-                    _animSpriteTagList.EnsureSizeEx(index + 1);
-                    SpriteTagInfo tagInfo = _animSpriteTagList[index];
-                    tagInfo.Key = _GenerateKey(matchGroups[1].Value, index);
-                    tagInfo.Names = names;
-                    tagInfo.VertextIndex = match.Index;
-                    float size = float.Parse(matchGroups[2].Value);
-                    float width = float.Parse(matchGroups[3].Value);
+                    _spriteTagList.EnsureSizeEx(index + 1);
+                    SpriteTagInfo tagInfo = _spriteTagList[index] ?? (_spriteTagList[index] = new SpriteTagInfo());
+
+                    tagInfo.Key = _GenerateKey(groups[1].Value, index);
+                    tagInfo.SetName(name);
+                    tagInfo.SetVertexIndex(match.Index);
+                    float size = float.Parse(groups[2].Value);
+                    float width = float.Parse(groups[3].Value);
 
                     float offset = 0.0f;
                     if (width > 1.0f)
@@ -288,47 +287,44 @@ namespace Unique.UI
                 }
             }
 
-            if (index < _animSpriteTagList.Count)
+            if (index < _spriteTagList.Count)
             {
-                int count = _animSpriteTagList.Count;
+                int count = _spriteTagList.Count;
                 for (int i = index ; i < count; ++i)
                 {
-                    _animSpriteTagList[i].Reset();
+                    _spriteTagList[i].Reset();
                 }
             }
         }
 
         private void _ResetSpriteInfoList ()
         {
-            if (_animSpriteTagList == null || _animSpriteTagList.Count == 0)
+            if (_spriteTagList.IsNullOrEmptyEx())
             {
-                _animSpriteInfoList = null;
+                _spriteAnimList = null;
                 return;
             }
 
-            if (_animSpriteInfoList == null)
-            {
-                _animSpriteInfoList = new List<SpriteAnimInfo>(2);
-            }
+            _spriteAnimList = _spriteAnimList ?? new List<SpriteAnimInfo>(2);
 
             int validCount = 0;
-            for (int i = 0; i < _animSpriteTagList.Count; ++ i)
+            for (int i = 0; i < _spriteTagList.Count; ++ i)
             {
-                if (_animSpriteTagList[i].IsValid())
+                if (_spriteTagList[i].IsValid())
                 {
                     validCount++;
                 }
             }
 
-            if (validCount > _animSpriteInfoList.Count)
+            if (validCount > _spriteAnimList.Count)
             {
-                _animSpriteInfoList.EnsureSizeEx(validCount);
+                _spriteAnimList.EnsureSizeEx(validCount);
             }
             else
             {
-                for (int i = validCount; i < _animSpriteInfoList.Count; ++i)
+                for (int i = validCount; i < _spriteAnimList.Count; ++i)
                 {
-                    _animSpriteInfoList[i].Reset();
+                    _spriteAnimList[i].Reset();
                 }
             }
         }
@@ -428,51 +424,32 @@ namespace Unique.UI
             
         private void _UpdateSpritePos ()
         {
-            if (_spriteVertPositionList != null)
+            _CalcQuadTag(true);
+
+            if (_spriteManager != null)
             {
-                _CalcQuadTag(_spriteVertPositionList , true);
-                if (_spriteManager != null)
-                {
-                    _spriteManager.UpdatePositon(this, _animSpriteInfoList);
-                }
+                _spriteManager.UpdatePositon(this, _spriteAnimList);
             }
         }
             
         private void _HandleSpriteTag (VertexHelper toFill)
         {
-            if (_animSpriteInfoList.IsNullOrEmptyEx() || _animSpriteTagList.IsNullOrEmptyEx())
+            if (_spriteAnimList.IsNullOrEmptyEx() || _spriteTagList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            _spriteVertPositionList = _spriteVertPositionList ?? new List<UIVertex>();
-
-            for (int i = 0; i < _animSpriteTagList.Count; i++)
+            for (int i = 0; i < _spriteTagList.Count; i++)
             {
-                SpriteTagInfo tempTagInfo = _animSpriteTagList[i];
-                if (!tempTagInfo.IsValid())
-                {
-                    continue;
-                }
-
-                int vertexIndex = ((tempTagInfo.VertextIndex + 1) * 4) - 1;
-                if (vertexIndex >= toFill.currentVertCount || vertexIndex < 0)
-                {
-                    continue;
-                }
-
-                UIVertex tempVert = new UIVertex();
-                toFill.PopulateUIVertex(ref tempVert, vertexIndex);
-
-                _spriteVertPositionList.EnsureSizeEx(i+1);
-                _spriteVertPositionList[i] = tempVert;
+                SpriteTagInfo tagInfo = _spriteTagList[i];
+                tagInfo.PopulateUIVertex(toFill);
             }
 
-            _CalcQuadTag(_spriteVertPositionList, false);
+            _CalcQuadTag(false);
 
             if (_spriteManager != null)
             {
-                _spriteManager.UpdateSpriteAnimInfos(this, _animSpriteInfoList);
+                _spriteManager.UpdateSpriteAnimInfos(this, _spriteAnimList);
             }
         }
 
@@ -481,19 +458,14 @@ namespace Unique.UI
         /// </summary>
         /// <param name="spriteVerters">图片位置信息</param>
         /// <param name="onlyUpdatePositon">是否只更新位置</param>
-        private void _CalcQuadTag (List<UIVertex> spriteVertices , bool onlyUpdatePosition)
+        private void _CalcQuadTag (bool onlyUpdatePosition)
         {
-            if (_animSpriteInfoList.IsNullOrEmptyEx())
+            if (_spriteAnimList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            if (_animSpriteTagList.IsNullOrEmptyEx())
-            {
-                return;
-            }
-
-            if (spriteVertices.IsNullOrEmptyEx())
+            if (_spriteTagList.IsNullOrEmptyEx())
             {
                 return;
             }
@@ -510,26 +482,21 @@ namespace Unique.UI
                 }
             }
 
-            for (int i = 0; i < _animSpriteTagList.Count; i++)
+            for (int i = 0; i < _spriteTagList.Count; i++)
             {
-                SpriteTagInfo tagInfo = _animSpriteTagList[i];
+                SpriteTagInfo tagInfo = _spriteTagList[i];
                 if (!tagInfo.IsValid())
                 {
                     continue;
                 }
 
-                SpriteAnimInfo animInfo = _animSpriteInfoList[i];
+                SpriteAnimInfo animInfo = _spriteAnimList[i] ?? (_spriteAnimList[i]= new SpriteAnimInfo());
 
                 animInfo.Key =  tagInfo.Key;
-                animInfo.Names = tagInfo.Names;
+                animInfo.Names = _inlineSprite.GetSpriteNamesFromPrefix(tagInfo.GetName());
 
-                if (i >= spriteVertices.Count)
-                {
-                    //Debug.LogWarning("SpriteAnim Position is less");
-                    continue;
-                }
-
-                Vector3 textPos = relativePostion + spriteVertices[i].position;
+                var v = tagInfo.GetUIVertex();
+                Vector3 textPos = relativePostion + v.position;
                 float xOffset = tagInfo.Offset * tagInfo.Size.x;
 
                 animInfo.Vertices[0] = new Vector3(xOffset, 0, 0) + textPos;
@@ -543,7 +510,7 @@ namespace Unique.UI
                 }
 
                 var names = animInfo.Names;
-                for (int j = 0; j < names.Count; j++)
+                for (int j = 0; j < names.Length; j++)
                 {
                     Rect newSpriteRect;
                     SpriteAssetInfo tempSpriteAsset = _inlineSprite.GetSpriteInfo(names[j]);
@@ -560,89 +527,21 @@ namespace Unique.UI
                     animInfo.Uvs[j] = newSpriteRect;
                 }
             }
-
         }
 
         //uGUI.Text不支持<quad/>标签，表现为乱码, 将uv全设置为0
-        private void _ClearQuadUv (IList<UIVertex> verts)
+        private void _ClearQuadUv (IList<UIVertex> vertices)
         {
-            if (_animSpriteTagList == null || _animSpriteTagList.Count == 0)
+            if (_spriteTagList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            UIVertex tempVertex;
-
-            for (int i = 0; i < _animSpriteTagList.Count; i++)
+            for (int i = 0; i < _spriteTagList.Count; i++)
             {
-                SpriteTagInfo temp = _animSpriteTagList[i];
-                if (!temp.IsValid())
-                {
-                    continue;
-                }
-
-                int startIndex = temp.VertextIndex * 4;
-                int endIndex = startIndex +  4;
-
-                for (int m = startIndex; m < endIndex; m++)
-                {
-                    if (m >= verts.Count)
-                    {
-                        continue;
-                    }
-
-                    tempVertex = verts[m];
-                    tempVertex.uv0 = Vector2.zero;
-                    verts[m] = tempVertex;
-                }
+                SpriteTagInfo tagInfo = _spriteTagList[i];
+                tagInfo.ClearQuadUV(vertices);
             }
-        }
-
-        //根据起始位置获得包围盒
-        private List<Rect> _GetBounds (VertexHelper toFill, int vertexStartIndex, int vertexEndIndex)
-        {
-            List<Rect> boxs = new List<Rect>();
-            if (null == toFill)
-            {
-                return boxs;
-            }
-
-            if (vertexStartIndex < 0 || vertexStartIndex >= toFill.currentVertCount)
-            {
-                return boxs;
-            }
-
-            if (vertexEndIndex < 0 || vertexEndIndex >= toFill.currentVertCount)
-            {
-                return boxs;
-            }
-
-            UIVertex vert = new UIVertex();
-            toFill.PopulateUIVertex(ref vert, vertexStartIndex);
-            var pos = vert.position;
-            var bounds = new Bounds(pos, Vector3.zero);
-            for (int i = vertexStartIndex, m = vertexEndIndex; i < m; i++)
-            {
-                if (i >= toFill.currentVertCount)
-                {
-                    break;
-                }
-
-                toFill.PopulateUIVertex(ref vert, i);
-                pos = vert.position;
-                if (pos.x < bounds.min.x)      // 换行重新添加包围框     todo
-                {
-                    boxs.Add(new Rect(bounds.min, bounds.size));
-                    bounds = new Bounds(pos, Vector3.zero);
-                }
-                else                          //扩展包围盒
-                {
-                    bounds.Encapsulate(pos);
-                }
-            }
-
-            boxs.Add(new Rect(bounds.min, bounds.size));
-            return boxs;
         }
 
         private void _HandleHrefTag (VertexHelper toFill)
@@ -664,7 +563,7 @@ namespace Unique.UI
                 int vertexStart = temp.StartIndex * 4;
                 int vertexEnd = (temp.EndIndex - 1) * 4 + 3;
 
-                _hrefTagInfos[i].Boxes = _GetBounds(toFill, vertexStart, vertexEnd);
+                _hrefTagInfos[i].CalcBounds(toFill, vertexStart, vertexEnd);
             }
         }
 
@@ -676,14 +575,10 @@ namespace Unique.UI
 
             foreach (var hrefInfo in _hrefTagInfos)
             {
-                var boxes = hrefInfo.Boxes;
-                for (var i = 0; i < boxes.Count; ++i)
+                if (hrefInfo.HitTest(lp))
                 {
-                    if (boxes[i].Contains(lp))
-                    {
-                        _onHrefClick.Invoke(hrefInfo.Name);
-                        return;
-                    }
+                    _onHrefClick.Invoke(hrefInfo.Name);
+                    return;
                 }
             }
         }
@@ -699,10 +594,10 @@ namespace Unique.UI
 //            Debug.LogFormat(format, args);
         }
 
-        private List<SpriteAnimInfo> _animSpriteInfoList;
+        private List<SpriteAnimInfo> _spriteAnimList;
         public List<SpriteAnimInfo> AnimSpriteInfoList
         {
-            get { return _animSpriteInfoList; }
+            get { return _spriteAnimList; }
         }
 
         /// <summary>
@@ -725,8 +620,7 @@ namespace Unique.UI
         private readonly UIVertex[] _tempVerts = new UIVertex[4];
 
         private InlineSprite _inlineSprite;
-        private List<SpriteTagInfo> _animSpriteTagList;
-        private List<UIVertex> _spriteVertPositionList;
+        private List<SpriteTagInfo> _spriteTagList;
 
         private string _parseOutputText;
 
@@ -736,7 +630,6 @@ namespace Unique.UI
 
         private static readonly Regex _constSpriteTagRegex = new Regex(@"<quad name=(.+?) size=(\d*\.?\d+%?) width=(\d*\.?\d+%?)\s*/>", RegexOptions.Singleline);
         private static readonly Regex _constSimpleSpriteTagRegex2 = new Regex(@"\[(.+?)\]", RegexOptions.Singleline);
-        private static readonly Regex _hrefRegex = new Regex(@"<a href=([^>\n\s]+)>(.*?)(</a>)", RegexOptions.Singleline);
 //        private static readonly Regex _underlineRegex = new Regex(@"<u>(.+?)</u>", RegexOptions.Singleline);
     }
 

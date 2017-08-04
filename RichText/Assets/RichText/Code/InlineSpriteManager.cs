@@ -9,12 +9,9 @@ using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine.Networking.Match;
 
 namespace Unique.UI
 {
-
     /// <summary>
     /// 表情渲染管理器，定时更新表情数据并绘制
     /// </summary>
@@ -28,9 +25,6 @@ namespace Unique.UI
             {
                 return;
             }
-
-            int id = richText.GetInstanceID();
-            _activeTextDict[id] = richText;
         }
 
         public void Unregister (RichText richText)
@@ -41,9 +35,6 @@ namespace Unique.UI
             }
 
             _RemoveSpriteAnimInfos(richText);
-
-            int id = richText.GetInstanceID();
-            _activeTextDict.Remove(id);
         }
 
         private void OnEnable ()
@@ -55,15 +46,7 @@ namespace Unique.UI
         private void OnDisable ()
         {
             _textSpriteAnimKeysDict.Clear();
-            _activeTextDict.Clear();
             _totalSpriteAnimDict.Clear();
-        }
-
-        private void OnDestroy ()
-        {
-            _tempVertices = null;
-            _tempUv = null;
-            _tempTriangles = null;
         }
 
         private void _RemoveSpriteAnimInfos (RichText richText)
@@ -96,8 +79,6 @@ namespace Unique.UI
 
         public void UpdateSpriteAnimInfos (RichText richText, List<SpriteAnimInfo> inputSpriteAnimInfos)
         {
-            Profiler.BeginSample("inlineSpriteManager UpdateSpriteAnimInfos ");
-
             if (richText == null)
             {
                 return;
@@ -166,8 +147,6 @@ namespace Unique.UI
             {
                 _UpdateMeshCapacity();
             }
-
-            Profiler.EndSample ();
         }
 
         public void UpdatePositon (RichText richText, List<SpriteAnimInfo> inputSpriteAnimInfos)
@@ -197,11 +176,11 @@ namespace Unique.UI
                 if (temp.RuningTime >= mSpriteAnimTimeGap)
                 {
                     temp.RuningTime = 0;
-                    temp.Currnt++;
+                    temp.Current++;
 
-                    if (temp.Currnt >= temp.Names.Count)
+                    if (temp.Current >= temp.Names.Length)
                     {
-                        temp.Currnt = 0;
+                        temp.Current = 0;
                     }
                 }
             }
@@ -212,28 +191,12 @@ namespace Unique.UI
         //TODO 分配策略 在文本修改比较多的情况下 分配过于频繁
         private void _UpdateMeshCapacity ()
         {
-            Profiler.BeginSample("inlineSpriteManager UpdateMeshCapacity ");
-
-            if (_totalSpriteAnimDict == null || _totalSpriteAnimDict.Count == 0)
-            {
-                _tempVertices = null;
-                _tempUv = null;
-                _tempTriangles = null;
-                return;
-            }
-     
-            int count = _totalSpriteAnimDict.Count;
-            _tempUv = _tempUv.SetCapacityEx(count * 4);
-            _tempVertices = _tempVertices.SetCapacityEx(count * 4);
-            _tempTriangles = _tempTriangles.SetCapacityEx(count * 6);
-
-            Profiler.EndSample ();
+            int count = null != _totalSpriteAnimDict ? _totalSpriteAnimDict.Count : 0;
+            _mesh.SetSize(count);
         }
 
         private void _DrawSprite ()
         {
-            Profiler.BeginSample("inline SpriteManager DrawSprite");
-
             if (_totalSpriteAnimDict.Count == 0)
             {
                 _UpdateMesh();
@@ -256,38 +219,22 @@ namespace Unique.UI
                     continue;
                 }
 
-                Array.Copy(animInfo.Vertices, 0, _tempVertices, index * 4, animInfo.Vertices.Length);
-                animInfo.GetUV(ref _tempUv , index * 4);
+                _mesh.Clear();
+                _mesh.UpdateVertices(animInfo.Vertices, index);
 
-                int startIndex = index * 6;
-                _tempTriangles[startIndex + 0] = 0 + 4 * index;
-                _tempTriangles[startIndex + 1] = 1 + 4 * index;
-                _tempTriangles[startIndex + 2] = 2 + 4 * index;
-
-                _tempTriangles[startIndex + 3] = 1 + 4 * index;
-                _tempTriangles[startIndex + 4] = 0 + 4 * index;
-                _tempTriangles[startIndex + 5] = 3 + 4 * index;
+                Rect rect = animInfo.Uvs[animInfo.Current];
+                _mesh.UpdateUV(rect, index);
+                _mesh.UpdateTriangles(index);
 
                 index++;
             }
-
-            Profiler.EndSample ();
 
             _UpdateMesh();
         }
 
         private void _UpdateMesh ()
         {
-            Profiler.BeginSample("inline SpriteManager DrawSprite UpdateMesh");
-
-            var mesh = new Mesh ();
-            mesh.vertices = _tempVertices;
-            mesh.uv = _tempUv;
-            mesh.triangles = _tempTriangles;
-            GetComponent<CanvasRenderer>().SetMesh(mesh);
-            GetComponent<InlineSprite>().UpdateMaterial();
-
-            Profiler.EndSample();
+            GetComponent<CanvasRenderer>().SetMesh(_mesh.GetMesh());
         }
 
         /// <summary>
@@ -300,17 +247,8 @@ namespace Unique.UI
         /// </summary>
         private Dictionary<int, List<string>> _textSpriteAnimKeysDict = new Dictionary<int, List<string>>();
 
-        /// <summary>
-        /// 当前激活中的Text
-        /// </summary>
-        private Dictionary<int, RichText> _activeTextDict = new Dictionary<int, RichText>();
-
         private readonly float mSpriteAnimTimeGap = 0.2f;
 
-        //Mesh Data Cache
-        private Vector3[] _tempVertices;
-        private Vector2[] _tempUv;
-        private int[] _tempTriangles;
-
+        private readonly RichTextMesh _mesh = new RichTextMesh();
     }
 }

@@ -253,7 +253,7 @@ namespace Unique.UI
             return sprites;
         }
 
-        public List<string> GetSpriteNamesFromPrefix (string namePrefix)
+        public string[] GetSpriteNamesFromPrefix (string namePrefix)
         {
             List<SpriteAssetInfo> temp = GetSpriteInfosFromPrefix(namePrefix);
             if (temp == null)
@@ -261,10 +261,10 @@ namespace Unique.UI
                 return null;
             }
 
-            List<string> strs = new List<string>(); 
+            string[] strs = new string[temp.Count];
             for (int i = 0; i < temp.Count; ++ i)
             {
-                strs.Add(temp[i].name);
+                strs[i] = temp[i].name;
             }
 
             return strs;

@@ -39,7 +39,7 @@ namespace Unique.UI
             {
                 inlineSpriteAsset = ScriptableObject.CreateInstance<InlineSpriteAsset>();
                 inlineSpriteAsset.TextureSource = sourceTex;
-                inlineSpriteAsset.listSpriteInfo = GetSpritesInfor(sourceTex);
+                inlineSpriteAsset.listSpriteInfo = GetSpritesInfo(sourceTex);
 
                 AssetDatabase.CreateAsset(inlineSpriteAsset, TargetPath + fileNameWithoutExtension + ".asset");
             }
@@ -47,7 +47,7 @@ namespace Unique.UI
             Debug.Log("_______________________________File:" + fileNameWithoutExtension + "Gerenated sucess");
         }
 
-        public static List<SpriteAssetInfo> GetSpritesInfor(Texture2D tex)
+        public static List<SpriteAssetInfo> GetSpritesInfo (Texture2D tex)
         {
             List<SpriteAssetInfo> m_sprites = new List<SpriteAssetInfo>();
 

@@ -23,9 +23,9 @@ namespace Unique.UI
         public Vector3[] Vertices;
         public Rect[]  Uvs;
 
-        public int Currnt = 0;
+        public int Current = 0;
         public float RuningTime = 0;
-        public List<string> Names ;
+        public string[] Names ;
 
         public SpriteAnimInfo ()
         {
@@ -44,29 +44,5 @@ namespace Unique.UI
         {
             return !string.IsNullOrEmpty(Key);
         }
-
-        public  void GetUV (ref Vector2[] uv , int startIndex)
-        {
-            if (uv == null || uv.Length == 0)
-            {
-                return;
-            }
-
-            Rect cur = Uvs[Currnt];
-
-            uv[startIndex].x =  cur.x;
-            uv[startIndex].y =  cur.y;
-
-            uv[startIndex + 1].x = cur.x + cur.width;
-            uv[startIndex + 1].y = cur.y + cur.height;
-
-            uv[startIndex + 2].x = cur.x + cur.width;
-            uv[startIndex + 2].y = cur.y;
-
-            uv[startIndex+3].x = cur.x ;
-            uv[startIndex+3].y = cur.y + cur.height;
-        }
     }
-
-
 }

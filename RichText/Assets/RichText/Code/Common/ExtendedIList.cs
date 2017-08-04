@@ -11,14 +11,14 @@ namespace Unique
 {
     internal static class ExtendedIList
     {
-        public static void EnsureSizeEx<T> (this IList<T> list, int size) where T : new()
+        public static void EnsureSizeEx<T> (this IList<T> list, int size)
         {
             if (null != list)
             {
                 var count = list.Count;
                 for (int i= count; i< size; ++i)
                 {
-                    list.Add(new T());
+                    list.Add(default(T));
                 }
             }
         }
