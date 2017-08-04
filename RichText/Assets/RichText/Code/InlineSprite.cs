@@ -74,7 +74,8 @@ namespace Unique.UI
 
         public new void UpdateMaterial()
         {
-            base.UpdateMaterial();
+//            SetMaterialDirty();
+//            base.UpdateMaterial();
         }
     }
 }
