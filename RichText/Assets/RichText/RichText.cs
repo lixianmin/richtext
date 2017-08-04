@@ -23,75 +23,36 @@ namespace Unique.UI
     [ExecuteInEditMode]
     public class RichText : Text, IPointerClickHandler
     {
-        private List<SpriteAnimInfo> mAnimSpriteInfoList;
-        public List<SpriteAnimInfo> AnimSpriteInfoList
+        protected override void OnEnable ()
         {
-            get { return mAnimSpriteInfoList; }
-        }
+            base.alignByGeometry = true;
+            base.supportRichText = true;
 
-        /// <summary>
-        /// 可通过外部设置避免查找
-        /// </summary>
-        private InlineSpriteManager mSpriteManager;
-        public InlineSpriteManager SpriteManager
-        {
-            get { return mSpriteManager; }
-            set { mSpriteManager = value; }
-        }
-
-        private HrefClickEvent m_onHrefClick = new HrefClickEvent();
-        public HrefClickEvent onHrefClick
-        {
-            get { return m_onHrefClick; }
-            set { m_onHrefClick = value; }
-        }
-
-        private InlineSprite mInlineSprite;
-        private List<SpriteTagInfo> mAnimSpiteTagList;
-
-        private string mParseOutputText;
-
-        private readonly List<HrefTagInfo> mHrefTagInfos = new List<HrefTagInfo>();
-        private readonly List<UnderlineTagInfo> mUnderlineTagInfos = new List<UnderlineTagInfo>();
-
-        private static readonly StringBuilder mTextBuilder = new StringBuilder();
-
-        private static readonly Regex mConstSpriteTagRegex = new Regex(@"<quad name=(.+?) size=(\d*\.?\d+%?) width=(\d*\.?\d+%?)/>", RegexOptions.Singleline);
-        private static readonly Regex mConstSimpleSpriteTagRegex2 = new Regex(@"\[(.+?)\]", RegexOptions.Singleline);
-        private static readonly Regex mHrefRegex = new Regex(@"<a href=([^>\n\s]+)>(.*?)(</a>)", RegexOptions.Singleline);
-        private static readonly Regex mUnderlineRegex = new Regex(@"<u>(.+?)</u>", RegexOptions.Singleline);
-
-        #region override
-        protected override void OnEnable()
-        {
-            alignByGeometry = true;
-            supportRichText = true;
-
-            Register();
+            _Register();
 
             base.OnEnable();
         }
 
-        private void Register()
+        private void _Register ()
         {
-            if (mSpriteManager == null && canvas != null)
+            if (_spriteManager == null && canvas != null)
             {
-                mSpriteManager = GetSpriteManager();
+                _spriteManager = GetSpriteManager();
 
-                if (mSpriteManager == null)
+                if (_spriteManager == null)
                 {
                     Debug.LogError("InlineSpriteAnimManager is miss");
                 }
             }
 
-            if (mSpriteManager != null)
+            if (_spriteManager != null)
             {
-                mInlineSprite = mSpriteManager.GetComponent<InlineSprite>();
-                mInlineSprite.SetAllDirty();
+                _inlineSprite = _spriteManager.GetComponent<InlineSprite>();
+                _inlineSprite.SetAllDirty();
 
-                ParseText();
+                _ParseText();
                 SetVerticesDirty();
-                mSpriteManager.Register(this);
+                _spriteManager.Register(this);
             }
         }
 
@@ -99,7 +60,7 @@ namespace Unique.UI
         /// 从自身向上查找，表情图片单独渲染，解决层级问题可以通过增加多个管理器解决（不是很好的解决方案）
         /// </summary>
         /// <returns></returns>
-        private InlineSpriteManager GetSpriteManager()
+        private InlineSpriteManager GetSpriteManager ()
         {
             Transform current = transform.parent;
             while (null != current) 
@@ -112,25 +73,27 @@ namespace Unique.UI
 
                 current = current.parent;
             }
+
             return null;
         }
 
-        protected override void OnDisable()
+        protected override void OnDisable ()
         {
-            if (mSpriteManager != null)
+            if (_spriteManager != null)
             {
-                mSpriteManager.UnRegister(this);
+                _spriteManager.Unregister(this);
             }
 
             base.OnDisable();
         }
 
-        protected override void OnDestroy()
+        protected override void OnDestroy ()
         {
-            if (mSpriteManager != null)
+            if (_spriteManager != null)
             {
-                mSpriteManager.UnRegister(this);
+                _spriteManager.Unregister(this);
             }
+
             base.OnDestroy();
         }
 
@@ -140,6 +103,7 @@ namespace Unique.UI
             {
                 return base.text;
             }
+
             set
             {
                 if (string.IsNullOrEmpty(value))
@@ -149,229 +113,174 @@ namespace Unique.UI
                         return;
                     }
 
-                    m_Text = "";
-                    DebugLog("Text Changed");
-                    ParseText();
+                    m_Text = string.Empty;
+                    _ParseText();
                     SetVerticesDirty();
                 }
                 else if (m_Text != value)
                 {
                     m_Text = value;
-                    DebugLog("Text Changed");
-                    ParseText();
+                    _ParseText();
                     SetVerticesDirty();
                     SetLayoutDirty();
                 }
             }
         }
 
-        public override void SetVerticesDirty()
+        public override void SetVerticesDirty ()
         {
             if (!IsActive())
             {
                 return;
             }
 
-            #if UNITY_EDITOR
-            //处理编辑下文本修改问题，默认TextEditor会绕开override的text实现
-            ParseText();
-            #endif
-            DebugLog("Text SetVerticesDirty");
+            // 处理编辑下文本修改问题，默认TextEditor会绕开override的text实现
+            if (Application.isEditor)
+            {
+                _ParseText();
+            }
+
+            _DebugLog("Text SetVerticesDirty");
             base.SetVerticesDirty();
         }
 
-        #endregion
-
-        #region ParseText
-
-        private void ParseText()
+        private void _ParseText ()
         {
-            Profiler.BeginSample("InlineText ParseText");
-
-            mParseOutputText = text;
-
-            if (mParseOutputText.IndexOf('[') >= 0 && mParseOutputText.IndexOf(']') > 0)
+            Profiler.BeginSample("RichText.ParseText()");
             {
-                mParseOutputText = ReplaceSimpleSpriteTags(mParseOutputText);
+                _parseOutputText = this.text;
+
+                var leftBracketIndex = _parseOutputText.IndexOf ('[');
+                if (leftBracketIndex >= 0 && _parseOutputText.IndexOf(']', leftBracketIndex) > 0)
+                {
+                    _parseOutputText = _ReplaceSimpleSpriteTags(_parseOutputText);
+                }
+
+                _parseOutputText = _ParseHrefTags(_parseOutputText);
+                _ParseSpriteTags(_parseOutputText);
+
+                _ResetSpriteInfoList(); 
             }
-
-            mParseOutputText = ParseUnderlineTag(mParseOutputText);
-
-            mParseOutputText = ParseHrefTags(mParseOutputText);
-
-            ParseSpriteTags(mParseOutputText);
-
-            ResetSpriteInfoList();
 
             Profiler.EndSample();
         }
 
         //计算在顶点中起始和结束位置，考虑<u></u>的影响，其他标签暂且不考虑
         //归根到底是计算文字在顶点数据中位置方式不太靠谱
-        protected string ParseHrefTags(string strText)
+        protected string _ParseHrefTags (string strText)
         {
-            Profiler.BeginSample("InlineText Parse ParseUnderlineTag");
-
-            mTextBuilder.Length = 0;
+            Profiler.BeginSample("RichText._ParseHrefTags()");
 
             if (string.IsNullOrEmpty(strText) || strText.IndexOf("href") == -1)
             {
-                for (int i = 0; i < mHrefTagInfos.Count; ++i)
+                for (int i = 0; i < _hrefTagInfos.Count; ++i)
                 {
-                    mHrefTagInfos[i].Reset();
+                    _hrefTagInfos[i].Reset();
                 }
+
+                Profiler.EndSample();
                 return strText;
             }
 
+            _sbTextBuilder.Length = 0;
+
             var indexText = 0;
             int index = 0;
-            foreach (Match match in mHrefRegex.Matches(strText))
+            foreach (Match match in _hrefRegex.Matches(strText))
             {
-                mTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
+                _sbTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
 
-                if (index + 1 > mHrefTagInfos.Count)
+                if (index + 1 > _hrefTagInfos.Count)
                 {
                     var temp = new HrefTagInfo();
-                    mHrefTagInfos.Add(temp);
+                    _hrefTagInfos.Add(temp);
                 }
 
-                HrefTagInfo hrefInfo = mHrefTagInfos[index];
+                HrefTagInfo hrefInfo = _hrefTagInfos[index];
 
-                hrefInfo.StartIndex = mTextBuilder.Length;
-                hrefInfo.EndIndex = mTextBuilder.Length + match.Groups[2].Length;
+                hrefInfo.StartIndex = _sbTextBuilder.Length;
+                hrefInfo.EndIndex = _sbTextBuilder.Length + match.Groups[2].Length;
                 hrefInfo.Name = match.Groups[1].Value;
 
-                mTextBuilder.Append(match.Groups[2].Value);
+                _sbTextBuilder.Append(match.Groups[2].Value);
                 indexText = match.Index + match.Length;
                 index ++;
             }
-            mTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
+            _sbTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
 
-            if (index < mHrefTagInfos.Count)
+            if (index < _hrefTagInfos.Count)
             {
-                int count = mHrefTagInfos.Count;
+                int count = _hrefTagInfos.Count;
                 for (int i = index; i < count; ++i)
                 {
-                    mHrefTagInfos[i].Reset();
+                    _hrefTagInfos[i].Reset();
                 }
             }
 
             Profiler.EndSample();
-
-            return mTextBuilder.ToString();
+            return _sbTextBuilder.ToString();
         }
 
-        protected string ParseUnderlineTag(string strText)
+        private string _ReplaceSimpleSpriteTags (string strText)
         {
-            Profiler.BeginSample("InlineText Parse ParseUnderlineTag");
+            Profiler.BeginSample("RichText._ReplaceSimpleSpriteTags()");
 
-            mTextBuilder.Length = 0;
-
-            if (string.IsNullOrEmpty(strText) ||  strText.IndexOf("<u>") ==-1 || strText.IndexOf("</u>") == -1)
-            {
-                for (int i = 0; i < mUnderlineTagInfos.Count; ++i)
-                {
-                    mUnderlineTagInfos[i].Reset();
-                }
-                return strText;
-            }
-
+            _sbTextBuilder.Length = 0;
             var indexText = 0;
-            int index = 0;
-            foreach (Match match in mUnderlineRegex.Matches(strText))
+            foreach (Match match in _constSimpleSpriteTagRegex2.Matches(strText))
             {
-                mTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
-
-                if (index + 1 > mUnderlineTagInfos.Count)
-                {
-                    var temp = new UnderlineTagInfo();
-                    mUnderlineTagInfos.Add(temp);
-                }
-
-                //文本起始顶点索引 TODO 位置计算容易出问题，万一中间带有其他解释符号。所以下滑先只能放在次里面（仅次于超链接）
-                mUnderlineTagInfos[index].StartIndex = mTextBuilder.Length;
-                mUnderlineTagInfos[index].EndIndex = mTextBuilder.Length + match.Groups[1].Length;
-
-                mTextBuilder.Append(match.Groups[1].Value);
-                indexText = match.Index + match.Length;
-
-                index ++;
-            }
-
-            if (index < mUnderlineTagInfos.Count)
-            {
-                int count = mUnderlineTagInfos.Count;
-                for (int i = index; i < count; ++i)
-                {
-                    mUnderlineTagInfos[i].Reset();
-                }
-            }
-
-            mTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
-
-            Profiler.EndSample();
-
-            return mTextBuilder.ToString();
-        }
-
-        private string ReplaceSimpleSpriteTags(string strText)
-        {
-            Profiler.BeginSample("InlineText Parse ReplaceSimpleSpriteTags");
-
-            mTextBuilder.Length = 0;
-            var indexText = 0;
-            foreach (Match match in mConstSimpleSpriteTagRegex2.Matches(strText))
-            {
-                mTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
+                _sbTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
                 string strSprite = "<quad name=" + match.Groups[1].ToString().Trim() + " size=" + fontSize + " width=1.2/>";
-                mTextBuilder.Append(strSprite);
+                _sbTextBuilder.Append(strSprite);
                 indexText = match.Index + match.Length;
             }
-            mTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
+            _sbTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
             Profiler.EndSample();
-            return mTextBuilder.ToString();
+
+            return _sbTextBuilder.ToString();
         }
 
-        private void ParseSpriteTags(string strText)
+        private void _ParseSpriteTags (string strText)
         {
-            if (mInlineSprite == null)
+            if (_inlineSprite == null)
             {
                 return;
             }
 
-            if (mAnimSpiteTagList == null)
+            if (_animSpiteTagList == null)
             {
-                mAnimSpiteTagList = new List<SpriteTagInfo>();
+                _animSpiteTagList = new List<SpriteTagInfo>();
             }
 
             if (string.IsNullOrEmpty(strText) || -1 == strText.IndexOf("quad") )
             {
-                for (int i = 0; i < mAnimSpiteTagList.Count; ++i)
+                for (int i = 0; i < _animSpiteTagList.Count; ++i)
                 {
-                    mAnimSpiteTagList[i].Reset();
+                    _animSpiteTagList[i].Reset();
                 }
                 return;
             }
 
             int index = 0;
-            foreach (Match match in mConstSpriteTagRegex.Matches(strText))
+            foreach (Match match in _constSpriteTagRegex.Matches(strText))
             {
-                List<string> names = mInlineSprite.GetSpriteNamesFromPrefix(match.Groups[1].Value);
+                var matchGroups = match.Groups;
+                List<string> names = _inlineSprite.GetSpriteNamesFromPrefix(matchGroups[1].Value);
                 if (names != null && names.Count > 0)
                 {
-                    if (index + 1 > mAnimSpiteTagList.Count)
+                    if (index + 1 > _animSpiteTagList.Count)
                     {
                         SpriteTagInfo tempNew = new SpriteTagInfo();
-                        mAnimSpiteTagList.Add(tempNew);
+                        _animSpiteTagList.Add(tempNew);
                     }
 
-                    SpriteTagInfo tempArrayTag = mAnimSpiteTagList[index];
-                    tempArrayTag.Key = GenerateKey(match.Groups[1].Value, index);
+                    SpriteTagInfo tempArrayTag = _animSpiteTagList[index];
+                    tempArrayTag.Key = _GenerateKey(matchGroups[1].Value, index);
                     tempArrayTag.Names = names;
                     tempArrayTag.VertextIndex = match.Index;
-                    float size = float.Parse(match.Groups[2].Value);
+                    float size = float.Parse(matchGroups[2].Value);
 
-                    float width = float.Parse(match.Groups[3].Value);
+                    float width = float.Parse(matchGroups[3].Value);
                     float offset = 0.0f;
                     if (width > 1.0f)
                     {
@@ -385,88 +294,77 @@ namespace Unique.UI
                 }
             }
 
-            if (index < mAnimSpiteTagList.Count)
+            if (index < _animSpiteTagList.Count)
             {
-                int count = mAnimSpiteTagList.Count;
+                int count = _animSpiteTagList.Count;
                 for (int i = index ; i < count; ++i)
                 {
-                    mAnimSpiteTagList[i].Reset();
+                    _animSpiteTagList[i].Reset();
                 }
             }
         }
 
-        private void ResetSpriteInfoList()
+        private void _ResetSpriteInfoList ()
         {
-            if (mAnimSpiteTagList == null || mAnimSpiteTagList.Count == 0)
+            if (_animSpiteTagList == null || _animSpiteTagList.Count == 0)
             {
-                mAnimSpriteInfoList = null;
+                _animSpriteInfoList = null;
                 return;
             }
 
-            if (mAnimSpriteInfoList == null)
+            if (_animSpriteInfoList == null)
             {
-                mAnimSpriteInfoList = new List<SpriteAnimInfo>(2);
+                _animSpriteInfoList = new List<SpriteAnimInfo>(2);
             }
 
             int validCount = 0;
-            for (int i = 0; i < mAnimSpiteTagList.Count; ++ i)
+            for (int i = 0; i < _animSpiteTagList.Count; ++ i)
             {
-                if (mAnimSpiteTagList[i].IsValid())
+                if (_animSpiteTagList[i].IsValid())
                 {
                     validCount++;
                 }
             }
 
-            if (validCount > mAnimSpriteInfoList.Count)
+            if (validCount > _animSpriteInfoList.Count)
             {
-                int needCount = validCount - mAnimSpriteInfoList.Count;
+                int needCount = validCount - _animSpriteInfoList.Count;
                 for (int i = 0; i <= needCount; ++i)
                 {
                     SpriteAnimInfo infos = new SpriteAnimInfo();
-                    mAnimSpriteInfoList.Add(infos);
+                    _animSpriteInfoList.Add(infos);
                 }
             }
             else
             {
-                for (int i = validCount; i < mAnimSpriteInfoList.Count; ++i)
+                for (int i = validCount; i < _animSpriteInfoList.Count; ++i)
                 {
-                    mAnimSpriteInfoList[i].Reset();
+                    _animSpriteInfoList[i].Reset();
                 }
             }
         }
 
-        private string GenerateKey(string name, int pos)
+        private string _GenerateKey(string name, int pos)
         {
             return name + "_" + gameObject.GetInstanceID() + "_" +pos.ToString();
         }
 
-        #endregion
-
-        #region update
-        void LateUpdate()
+        private void LateUpdate ()
         {
-            if (mSpriteManager == null)
+            if (_spriteManager == null)
             {
-                Register();
+                _Register();
             }
 
             if (rectTransform.hasChanged)
             {
                 rectTransform.hasChanged = false;
-                UpdateSpritePos();
+                _UpdateSpritePos();
             }
         }
 
-        readonly UIVertex[] m_TempVerts = new UIVertex[4];
-        private VertexHelper mVertexHelperRef;
-        private TextGenerationSettings TextGenerationSettings;
-        protected override void OnPopulateMesh(VertexHelper toFill)
+        protected override void OnPopulateMesh (VertexHelper toFill)
         {
-            Profiler.BeginSample("inlineText OnPopulateMesh");
-
-            DebugLog("Text OnPopulateMesh");
-
-            Profiler.BeginSample("inlineText OnPopulateMesh Data");
             if (font == null)
             {
                 return;
@@ -479,8 +377,8 @@ namespace Unique.UI
 
             Vector2 extents = rectTransform.rect.size;
 
-            TextGenerationSettings = GetGenerationSettings(extents);
-            cachedTextGenerator.Populate(mParseOutputText, TextGenerationSettings);
+            _textGenerationSettings = GetGenerationSettings(extents);
+            cachedTextGenerator.Populate(_parseOutputText, _textGenerationSettings);
 
             Rect inputRect = rectTransform.rect;
 
@@ -501,20 +399,20 @@ namespace Unique.UI
 
             toFill.Clear();
 
-            ClearQuadUv( verts);
+            _ClearQuadUv( verts);
 
             if (roundingOffset != Vector2.zero)
             {
                 for (int i = 0; i < vertCount; ++i)
                 {
                     int tempVertsIndex = i & 3;
-                    m_TempVerts[tempVertsIndex] = verts[i];
-                    m_TempVerts[tempVertsIndex].position *= unitsPerPixel;
-                    m_TempVerts[tempVertsIndex].position.x += roundingOffset.x;
-                    m_TempVerts[tempVertsIndex].position.y += roundingOffset.y;
+                    _tempVerts[tempVertsIndex] = verts[i];
+                    _tempVerts[tempVertsIndex].position *= unitsPerPixel;
+                    _tempVerts[tempVertsIndex].position.x += roundingOffset.x;
+                    _tempVerts[tempVertsIndex].position.y += roundingOffset.y;
                     if (tempVertsIndex == 3)
                     {
-                        toFill.AddUIVertexQuad(m_TempVerts);
+                        toFill.AddUIVertexQuad(_tempVerts);
                     }
                 }
             }
@@ -523,102 +421,74 @@ namespace Unique.UI
                 for (int i = 0; i < vertCount; ++i)
                 {
                     int tempVertsIndex = i & 3;
-                    m_TempVerts[tempVertsIndex] = verts[i];
-                    m_TempVerts[tempVertsIndex].position *= unitsPerPixel;
+                    _tempVerts[tempVertsIndex] = verts[i];
+                    _tempVerts[tempVertsIndex].position *= unitsPerPixel;
                     if (tempVertsIndex == 3)
                     {
-                        toFill.AddUIVertexQuad(m_TempVerts);
+                        toFill.AddUIVertexQuad(_tempVerts);
                     }
                 }
             }
             m_DisableFontTextureRebuiltCallback = false;
-            mVertexHelperRef = toFill;
-            Profiler.EndSample();
 
-            Profiler.BeginSample("inlineText HerfTagHandler ");
-            HerfTagHandler();
-            Profiler.EndSample();
-
-            Profiler.BeginSample("inlineText UnderlineTagsHandler ");
-            UnderlineTagsHandler();
-            Profiler.EndSample ();
-
-            Profiler.BeginSample("inlineText SpriteTagHandler ");
-            SpriteTagHandler();
-            Profiler.EndSample ();
-
-            Profiler.EndSample ();
+            _HandleHerfTag(toFill);
+            _HandleSpriteTag(toFill);
         }
-
-        #endregion
-
-        #region sprite
-        private void UpdateSpritePos()
+            
+        private void _UpdateSpritePos ()
         {
-            if (mSpriteVertPositionList != null)
+            if (_spriteVertPositionList != null)
             {
-                CalcQuadTag(mSpriteVertPositionList , true);
-                if (mSpriteManager != null)
+                _CalcQuadTag(_spriteVertPositionList , true);
+                if (_spriteManager != null)
                 {
-                    mSpriteManager.UpdatePositon(this, mAnimSpriteInfoList);
+                    _spriteManager.UpdatePositon(this, _animSpriteInfoList);
                 }
             }
         }
-
-        private List<UIVertex> mSpriteVertPositionList; 
-        private void SpriteTagHandler()
+            
+        private void _HandleSpriteTag (VertexHelper toFill)
         {
-            if (mAnimSpriteInfoList == null || mAnimSpriteInfoList.Count == 0)
+            if (_animSpriteInfoList.IsNullOrEmptyEx() || _animSpiteTagList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            if (mAnimSpiteTagList == null || mAnimSpiteTagList.Count == 0)
-            {
-                return;
-            }
+            _spriteVertPositionList = _spriteVertPositionList ?? new List<UIVertex>();
 
-            if (mSpriteVertPositionList == null)
+            for (int i = 0; i < _animSpiteTagList.Count; i++)
             {
-                mSpriteVertPositionList = new List<UIVertex>();
-            }
-
-            Profiler.BeginSample("inlineText SpriteTagHandler Position");
-
-            for (int i = 0; i < mAnimSpiteTagList.Count; i++)
-            {
-                SpriteTagInfo tempTagInfo = mAnimSpiteTagList[i];
+                SpriteTagInfo tempTagInfo = _animSpiteTagList[i];
                 if (!tempTagInfo.IsValid())
                 {
                     continue;
                 }
 
                 int vertexIndex = ((tempTagInfo.VertextIndex + 1) * 4) - 1;
-                if (vertexIndex >= mVertexHelperRef.currentVertCount || vertexIndex < 0)
+                if (vertexIndex >= toFill.currentVertCount || vertexIndex < 0)
                 {
-                    // Debug.LogError("CalcQuadTag Vertex Index is out of range:" + j);
                     continue;
                 }
 
-                if (i+1 > mSpriteVertPositionList.Count)
+                if (i+1 > _spriteVertPositionList.Count)
                 {
-                    int needCount = i + 1 - mSpriteVertPositionList.Count;
+                    int needCount = i + 1 - _spriteVertPositionList.Count;
                     for (int m = 0; m < needCount; ++m)
                     {
-                        mSpriteVertPositionList.Add(new UIVertex());
+                        _spriteVertPositionList.Add(new UIVertex());
                     }
                 }
+
                 UIVertex tempVer = new UIVertex();
-                mVertexHelperRef.PopulateUIVertex(ref tempVer, vertexIndex);
-                mSpriteVertPositionList[i] = tempVer;
+                toFill.PopulateUIVertex(ref tempVer, vertexIndex);
+                _spriteVertPositionList[i] = tempVer;
             }
-            Profiler.EndSample();
 
-            CalcQuadTag(mSpriteVertPositionList);
+            _CalcQuadTag(_spriteVertPositionList, false);
 
-            if (mSpriteManager != null)
+            if (_spriteManager != null)
             {
-                mSpriteManager.UpdateSpriteAnimInfos(this,mAnimSpriteInfoList);
+                _spriteManager.UpdateSpriteAnimInfos(this, _animSpriteInfoList);
             }
         }
 
@@ -627,30 +497,28 @@ namespace Unique.UI
         /// </summary>
         /// <param name="spriteVerters">图片位置信息</param>
         /// <param name="onlyUpdatePositon">是否只更新位置</param>
-        void CalcQuadTag(List<UIVertex> spriteVerters , bool onlyUpdatePositon = false)
+        private void _CalcQuadTag (List<UIVertex> spriteVertices , bool onlyUpdatePositon)
         {
-            Profiler.BeginSample("inlineText SpriteTagHandler CalcQuadTag");
-
-            if (mAnimSpriteInfoList == null || mAnimSpriteInfoList.Count == 0)
+            if (_animSpriteInfoList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            if (mAnimSpiteTagList == null || mAnimSpiteTagList.Count == 0)
+            if (_animSpiteTagList.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            if (spriteVerters == null || spriteVerters.Count == 0)
+            if (spriteVertices.IsNullOrEmptyEx())
             {
                 return;
             }
 
             //canvas scale 
             Vector3 relativePostion = Vector3.zero;
-            if (mSpriteManager != null)
+            if (_spriteManager != null)
             {
-                relativePostion = transform.position - mSpriteManager.transform.position;
+                relativePostion = transform.position - _spriteManager.transform.position;
                 if (canvas != null)
                 {
                     Vector3 scale = canvas.transform.localScale;
@@ -658,77 +526,72 @@ namespace Unique.UI
                 }
             }
 
-            Profiler.BeginSample("inlineText CalcQuadTag Cal");
-
-            for (int i = 0; i < mAnimSpiteTagList.Count; i++)
+            for (int i = 0; i < _animSpiteTagList.Count; i++)
             {
-                SpriteTagInfo tempTagInfo = mAnimSpiteTagList[i];
+                SpriteTagInfo tempTagInfo = _animSpiteTagList[i];
                 if (!tempTagInfo.IsValid())
                 {
                     continue;
                 }
 
-                SpriteAnimInfo tempSpriteAnimInfos = mAnimSpriteInfoList[i];
+                SpriteAnimInfo animInfo = _animSpriteInfoList[i];
 
-                tempSpriteAnimInfos.Key =  tempTagInfo.Key;
-                tempSpriteAnimInfos.Names = tempTagInfo.Names;
+                animInfo.Key =  tempTagInfo.Key;
+                animInfo.Names = tempTagInfo.Names;
 
-                if (i >= spriteVerters.Count)
+                if (i >= spriteVertices.Count)
                 {
                     //Debug.LogWarning("SpriteAnim Position is less");
                     continue;
                 }
-                Vector3 textpos = relativePostion + spriteVerters[i].position;
 
+                Vector3 textPos = relativePostion + spriteVertices[i].position;
                 float xOffset = tempTagInfo.Offset * tempTagInfo.Size.x;
 
-                tempSpriteAnimInfos.Vertices[0] = new Vector3(xOffset, 0, 0) + textpos;
-                tempSpriteAnimInfos.Vertices[1] = new Vector3(xOffset + tempTagInfo.Size.x , tempTagInfo.Size.y, 0) + textpos;
-                tempSpriteAnimInfos.Vertices[2] = new Vector3(xOffset + tempTagInfo.Size.x , 0, 0) + textpos;
-                tempSpriteAnimInfos.Vertices[3] = new Vector3(xOffset, tempTagInfo.Size.x, 0) + textpos;
+                animInfo.Vertices[0] = new Vector3(xOffset, 0, 0) + textPos;
+                animInfo.Vertices[1] = new Vector3(xOffset + tempTagInfo.Size.x , tempTagInfo.Size.y, 0) + textPos;
+                animInfo.Vertices[2] = new Vector3(xOffset + tempTagInfo.Size.x , 0, 0) + textPos;
+                animInfo.Vertices[3] = new Vector3(xOffset, tempTagInfo.Size.x, 0) + textPos;
 
-                if (onlyUpdatePositon == true)
+                if (onlyUpdatePositon)
                 {
                     continue;
                 }
 
-                for (int j = 0; j < tempTagInfo.Names.Count; j++)
+                var names = tempTagInfo.Names;
+                for (int j = 0; j < names.Count; j++)
                 {
                     Rect newSpriteRect ;
-                    SpriteAssetInfo tempSpriteAsset = mInlineSprite.GetSpriteInfo(tempTagInfo.Names[j]);
+                    SpriteAssetInfo tempSpriteAsset = _inlineSprite.GetSpriteInfo(names[j]);
                     if (tempSpriteAsset != null)
                     {
                         newSpriteRect = tempSpriteAsset.rect;
                     }
                     else
                     {
-                        newSpriteRect = mInlineSprite.GetSpriteInfo(0).rect;
+                        newSpriteRect = _inlineSprite.GetSpriteInfo(0).rect;
                         Debug.LogError("CalcQuadTag Can Find Sprite(name=" + tempTagInfo.Key + ")");
                     }
-                    tempSpriteAnimInfos.Uvs[j] = newSpriteRect;
+                    animInfo.Uvs[j] = newSpriteRect;
                 }
             }
 
-            Profiler.EndSample();
-
-            Profiler.EndSample();
         }
 
         //UGUIText不支持<quad/>标签，表现为乱码, 将uv全设置为0
-        private void ClearQuadUv( IList<UIVertex> verts)
+        private void _ClearQuadUv (IList<UIVertex> verts)
         {
-            if (mAnimSpiteTagList == null || mAnimSpiteTagList.Count == 0)
+            if (_animSpiteTagList == null || _animSpiteTagList.Count == 0)
             {
                 return;
             }
 
-            Profiler.BeginSample("inlineText Cal ClearQuadUv");
 
             UIVertex tempVertex;
 
-            for (int i = 0; i < mAnimSpiteTagList.Count; i++)
+            for (int i = 0; i < _animSpiteTagList.Count; i++)
             {
-                SpriteTagInfo temp = mAnimSpiteTagList[i];
+                SpriteTagInfo temp = _animSpiteTagList[i];
                 if (!temp.IsValid())
                 {
                     continue;
@@ -749,88 +612,39 @@ namespace Unique.UI
                     verts[m] = tempVertex;
                 }
             }
-            Profiler.EndSample();
-        }
-        #endregion
-
-        #region underline
-
-        private void UnderlineTagsHandler()
-        {
-            if (mUnderlineTagInfos == null || mUnderlineTagInfos.Count == 0)
-            {
-                return;
-            }
-
-            for (int i = 0; i < mUnderlineTagInfos.Count; ++i)
-            {
-                UnderlineTagInfo temp = mUnderlineTagInfos[i];
-                if (!temp.IsValid())
-                {
-                    continue;
-                }
-
-                int vertexStart = mUnderlineTagInfos[i].StartIndex * 4;
-                int vertexEnd = (mUnderlineTagInfos[i].EndIndex - 1) * 4 + 3;
-                mUnderlineTagInfos[i].Boxes = GetBounds(vertexStart, vertexEnd);
-            }
-
-            TextGenerator textGenerator = new TextGenerator();
-            textGenerator.Populate("_", TextGenerationSettings);
-            IList<UIVertex> underlineVerts = textGenerator.verts;
-
-            for(int m = 0 ; m < mUnderlineTagInfos.Count ; ++m)
-            {
-                var underlineInfo = mUnderlineTagInfos[m];
-                if (!underlineInfo.IsValid())
-                {
-                    continue;
-                }
-                if (underlineInfo.StartIndex >= mVertexHelperRef.currentVertCount)
-                {
-                    continue;
-                }
-
-                for (int i = 0; i < underlineInfo.Boxes.Count; i++)
-                {
-                    Vector3 startBoxPos = new Vector3(underlineInfo.Boxes[i].x, underlineInfo.Boxes[i].y, 0.0f);
-                    Vector3 endBoxPos = startBoxPos + new Vector3(underlineInfo.Boxes[i].width, 0.0f, 0.0f);
-                    AddUnderlineQuad(underlineVerts, startBoxPos, endBoxPos);
-                }
-            }
         }
 
         //根据起始位置获得包围盒
-        private List<Rect> GetBounds(int vertexStartIndex, int vertexEndIndex)
+        private List<Rect> _GetBounds (VertexHelper toFill, int vertexStartIndex, int vertexEndIndex)
         {
             List<Rect> boxs = new List<Rect>();
-            if (null == mVertexHelperRef)
+            if (null == toFill)
             {
                 return boxs;
             }
 
-            if (vertexStartIndex < 0 || vertexStartIndex >= mVertexHelperRef.currentVertCount)
+            if (vertexStartIndex < 0 || vertexStartIndex >= toFill.currentVertCount)
             {
                 return boxs;
             }
 
-            if (vertexEndIndex < 0 || vertexEndIndex >= mVertexHelperRef.currentVertCount)
+            if (vertexEndIndex < 0 || vertexEndIndex >= toFill.currentVertCount)
             {
                 return boxs;
             }
 
             UIVertex vert = new UIVertex();
-            mVertexHelperRef.PopulateUIVertex(ref vert, vertexStartIndex);
+            toFill.PopulateUIVertex(ref vert, vertexStartIndex);
             var pos = vert.position;
             var bounds = new Bounds(pos, Vector3.zero);
             for (int i = vertexStartIndex, m = vertexEndIndex; i < m; i++)
             {
-                if (i >= mVertexHelperRef.currentVertCount)
+                if (i >= toFill.currentVertCount)
                 {
                     break;
                 }
 
-                mVertexHelperRef.PopulateUIVertex(ref vert, i);
+                toFill.PopulateUIVertex(ref vert, i);
                 pos = vert.position;
                 if (pos.x < bounds.min.x)      // 换行重新添加包围框     todo
                 {
@@ -847,40 +661,17 @@ namespace Unique.UI
             return boxs;
         }
 
-        //添加下划线
-        private void AddUnderlineQuad( IList<UIVertex> underlineVerts, Vector3 startBoxPos, Vector3 endBoxPos)
+        private void _HandleHerfTag (VertexHelper toFill)
         {
-            Vector3[] underlinePos = new Vector3[4];
-            underlinePos[0] = startBoxPos + new Vector3(0, fontSize * -0.1f, 0);
-            underlinePos[1] = endBoxPos + new Vector3(0, fontSize * -0.1f, 0); ;
-            underlinePos[2] = endBoxPos + new Vector3(0, fontSize * 0f, 0);
-            underlinePos[3] = startBoxPos + new Vector3(0, fontSize * 0f, 0);
-
-            for (int i = 0; i < 4; ++i)
-            {
-                int tempVertsIndex = i & 3;
-                m_TempVerts[tempVertsIndex] = underlineVerts[i % 4];
-                m_TempVerts[tempVertsIndex].color = Color.blue;
-                m_TempVerts[tempVertsIndex].position = underlinePos[i];
-                if (tempVertsIndex == 3)
-                {
-                    mVertexHelperRef.AddUIVertexQuad(m_TempVerts);
-                }
-            }
-        }
-        #endregion
-
-        #region href
-        private void HerfTagHandler()
-        {
-            if (mHrefTagInfos == null ||  mHrefTagInfos.Count == 0)
+            if (_hrefTagInfos.IsNullOrEmptyEx())
             {
                 return;
             }
 
-            for(int i = 0 ; i < mHrefTagInfos.Count ; ++i)
+            var count = _hrefTagInfos.Count;
+            for(int i = 0 ; i < count ; ++i)
             {
-                HrefTagInfo temp = mHrefTagInfos[i];
+                HrefTagInfo temp = _hrefTagInfos[i];
                 if (!temp.IsValid())
                 {
                     continue;
@@ -889,32 +680,30 @@ namespace Unique.UI
                 int vertexStart = temp.StartIndex * 4;
                 int vertexEnd = (temp.EndIndex - 1) * 4 + 3;
 
-                mHrefTagInfos[i].Boxes = GetBounds(vertexStart, vertexEnd);
+                _hrefTagInfos[i].Boxes = _GetBounds(toFill, vertexStart, vertexEnd);
             }
         }
 
         /// 点击事件检测是否点击到超链接文本
-        public void OnPointerClick(PointerEventData eventData)
+        public void OnPointerClick (PointerEventData eventData)
         {
             Vector2 lp;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, eventData.pressEventCamera, out lp);
 
-            foreach (var hrefInfo in mHrefTagInfos)
+            foreach (var hrefInfo in _hrefTagInfos)
             {
                 var boxes = hrefInfo.Boxes;
                 for (var i = 0; i < boxes.Count; ++i)
                 {
                     if (boxes[i].Contains(lp))
                     {
-                        m_onHrefClick.Invoke(hrefInfo.Name);
+                        _onHrefClick.Invoke(hrefInfo.Name);
                         return;
                     }
                 }
             }
         }
-        #endregion
 
-        #region define
         [System.Serializable]
         public class SpriteTagInfo
         {
@@ -924,10 +713,9 @@ namespace Unique.UI
             public Vector2 Size;
             public float Offset;
 
-
             public void Reset()
             {
-                Key = "";
+                Key = string.Empty;
             }
 
             public SpriteTagInfo()
@@ -958,48 +746,66 @@ namespace Unique.UI
                 EndIndex = -1;
             }
 
-            public bool IsValid()
+            public bool IsValid ()
             {
                 return StartIndex != -1 && EndIndex != -1;
             }
 
             public  List<Rect> Boxes = new List<Rect>();
-        }
-
-        private class UnderlineTagInfo
-        {
-            public int StartIndex;
-
-            public int EndIndex;
-
-            public  List<Rect> Boxes = new List<Rect>();
-
-            public  UnderlineTagInfo()
-            {
-                Reset();
-            }
-
-            public void Reset()
-            {
-                StartIndex = -1;
-                EndIndex = -1;
-            }
-
-            public bool IsValid()
-            {
-                return StartIndex != -1 && EndIndex != -1;
-            }
         }
 
         [System.Serializable]
-        public class HrefClickEvent : UnityEvent<string> { }
-
-        #endregion
-
-        void DebugLog(string str)
+        public class HrefClickEvent : UnityEvent<string>
         {
-            // Debug.Log("_______________________" + str);
+            
         }
+
+        private void _DebugLog (string format, params object[] args)
+        {
+//            Debug.LogFormat(format, args);
+        }
+
+        private List<SpriteAnimInfo> _animSpriteInfoList;
+        public List<SpriteAnimInfo> AnimSpriteInfoList
+        {
+            get { return _animSpriteInfoList; }
+        }
+
+        /// <summary>
+        /// 可通过外部设置避免查找
+        /// </summary>
+        private InlineSpriteManager _spriteManager;
+        public InlineSpriteManager SpriteManager
+        {
+            get { return _spriteManager; }
+            set { _spriteManager = value; }
+        }
+
+        private HrefClickEvent _onHrefClick = new HrefClickEvent();
+        public HrefClickEvent onHrefClick
+        {
+            get { return _onHrefClick; }
+            set { _onHrefClick = value; }
+        }
+
+        private readonly UIVertex[] _tempVerts = new UIVertex[4];
+
+        private TextGenerationSettings _textGenerationSettings;
+
+        private InlineSprite _inlineSprite;
+        private List<SpriteTagInfo> _animSpiteTagList;
+        private List<UIVertex> _spriteVertPositionList;
+
+        private string _parseOutputText;
+
+        private readonly List<HrefTagInfo> _hrefTagInfos = new List<HrefTagInfo>();
+
+        private static readonly StringBuilder _sbTextBuilder = new StringBuilder();
+
+        private static readonly Regex _constSpriteTagRegex = new Regex(@"<quad name=(.+?) size=(\d*\.?\d+%?) width=(\d*\.?\d+%?)\s*/>", RegexOptions.Singleline);
+        private static readonly Regex _constSimpleSpriteTagRegex2 = new Regex(@"\[(.+?)\]", RegexOptions.Singleline);
+        private static readonly Regex _hrefRegex = new Regex(@"<a href=([^>\n\s]+)>(.*?)(</a>)", RegexOptions.Singleline);
+//        private static readonly Regex _underlineRegex = new Regex(@"<u>(.+?)</u>", RegexOptions.Singleline);
     }
 
 }

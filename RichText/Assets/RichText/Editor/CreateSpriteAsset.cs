@@ -34,12 +34,12 @@ namespace Unique.UI
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePathWithName);
 
             InlineSpriteAsset inlineSpriteAsset = AssetDatabase.LoadAssetAtPath(TargetPath + fileNameWithoutExtension + ".asset", typeof(InlineSpriteAsset)) as InlineSpriteAsset;
-            bool isNewAsset = inlineSpriteAsset == null ? true : false;
+//            bool isNewAsset = inlineSpriteAsset == null ? true : false;
             // if (isNewAsset)
             {
                 inlineSpriteAsset = ScriptableObject.CreateInstance<InlineSpriteAsset>();
                 inlineSpriteAsset.TextureSource = sourceTex;
-                inlineSpriteAsset.listSpriteInfor = GetSpritesInfor(sourceTex);
+                inlineSpriteAsset.listSpriteInfo = GetSpritesInfor(sourceTex);
 
                 AssetDatabase.CreateAsset(inlineSpriteAsset, TargetPath + fileNameWithoutExtension + ".asset");
             }

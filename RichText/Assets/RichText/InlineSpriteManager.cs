@@ -31,25 +31,25 @@ namespace Unique.UI
         public float RuningTime = 0;
         public List<string> Names ;
 
-        public SpriteAnimInfo()
+        public SpriteAnimInfo ()
         {
-            Key = "";
+            Key = string.Empty;
             Vertices = new Vector3[4];
-            Uvs      = new Rect[8];
+            Uvs = new Rect[8];
             Names = null;
         }
 
-        public void Reset()
+        public void Reset ()
         {
-            Key = "";
+            Key = string.Empty;
         }
 
-        public bool IsValid()
+        public bool IsValid ()
         {
             return !string.IsNullOrEmpty(Key);
         }
 
-        public  void GetUv(ref Vector2[] uv , int startIndex)
+        public  void GetUV (ref Vector2[] uv , int startIndex)
         {
             if (uv == null || uv.Length == 0)
             {
@@ -61,11 +61,11 @@ namespace Unique.UI
             uv[startIndex].x =  cur.x;
             uv[startIndex].y =  cur.y;
 
-            uv [startIndex + 1].x = cur.x + cur.width;
-            uv [startIndex + 1].y = cur.y + cur.height;
+            uv[startIndex + 1].x = cur.x + cur.width;
+            uv[startIndex + 1].y = cur.y + cur.height;
 
-            uv [startIndex + 2].x = cur.x + cur.width;
-            uv [startIndex + 2].y = cur.y;
+            uv[startIndex + 2].x = cur.x + cur.width;
+            uv[startIndex + 2].y = cur.y;
 
             uv[startIndex+3].x = cur.x ;
             uv[startIndex+3].y = cur.y + cur.height;
@@ -80,181 +80,141 @@ namespace Unique.UI
     [RequireComponent(typeof(InlineSprite))]
     public class InlineSpriteManager : MonoBehaviour
     {
-        /// <summary>
-        /// 所有动画数据，使用前检查Key是否有效
-        /// </summary>
-        private Dictionary<string, SpriteAnimInfo> mTotalSpriteAnimDic = new Dictionary<string, SpriteAnimInfo>();
-
-        /// <summary>
-        /// Text对应的表情动画Key值
-        /// </summary>
-        private Dictionary<int, List<string>> mTextSpriteAnimKeysDic = new Dictionary<int, List<string>>();
-
-        /// <summary>
-        /// 当前激活中的Text
-        /// </summary>
-        private Dictionary<int, RichText> mActicveTextDic = new Dictionary<int, RichText>();
-
-        private readonly float mSpriteAnimTimeGap = 0.2f;
-
-
-        //Mesh Data Cache
-        private Vector3[] mTempVertices;
-        private Vector2[] mTempUv;
-        private int[] mTempTriangles;
-
-        public void Register(RichText inlineText)
+        public void Register (RichText richText)
         {
-            if (null == inlineText)
+            if (null == richText)
             {
                 return;
             }
 
-            int id = inlineText.GetInstanceID();
-            if (mActicveTextDic.ContainsKey(id))
+            int id = richText.GetInstanceID();
+            _activeTextDict[id] = richText;
+        }
+
+        public void Unregister (RichText richText)
+        {
+            if (null == richText)
             {
                 return;
             }
 
-            // Debug.Log("___________________________Register Name:" + inlineText.name);
-            mActicveTextDic[id] = inlineText;
+            _RemoveSpriteAnimInfos(richText);
+
+            int id = richText.GetInstanceID();
+            _activeTextDict.Remove(id);
         }
 
-        public void UnRegister(RichText inlineText)
+        private void OnEnable ()
         {
-            if (null == inlineText)
+            _totalSpriteAnimDict.Clear();
+            _textSpriteAnimKeysDict.Clear();
+        }
+
+        private void OnDisable ()
+        {
+            _textSpriteAnimKeysDict.Clear();
+            _activeTextDict.Clear();
+            _totalSpriteAnimDict.Clear();
+        }
+
+        private void OnDestroy ()
+        {
+            _tempVertices = null;
+            _tempUv = null;
+            _tempTriangles = null;
+        }
+
+        private void _RemoveSpriteAnimInfos (RichText richText)
+        {
+            if (richText == null)
             {
                 return;
             }
 
-            RemoveSpriteAnimInfos(inlineText);
-
-            int id = inlineText.GetInstanceID();
-            if (mActicveTextDic.ContainsKey(id))
-            {
-                mActicveTextDic.Remove(id);
-            }
-            // Debug.Log("___________________________UnRegister Name:" + inlineText.name);
-        }
-
-        void OnEnable()
-        {
-            mTotalSpriteAnimDic.Clear();
-            mTextSpriteAnimKeysDic.Clear();
-        }
-
-        void OnDisable()
-        {
-            mTextSpriteAnimKeysDic.Clear();
-            mActicveTextDic.Clear();
-            mTotalSpriteAnimDic.Clear();
-        }
-
-        void OnDestroy()
-        {
-            mTempVertices = null;
-            mTempUv = null;
-            mTempTriangles = null;
-        }
-
-        public void RemoveSpriteAnimInfos(RichText inlineText)
-        {
-            if (inlineText == null)
+            int id = richText.GetInstanceID();
+            if (!_textSpriteAnimKeysDict.ContainsKey(id))
             {
                 return;
             }
 
-            int id = inlineText.GetInstanceID();
-            if (!mTextSpriteAnimKeysDic.ContainsKey(id))
-            {
-                return;
-            }
-
-            int count = mTotalSpriteAnimDic.Count;
-            List<string> spriteAnimKeys = mTextSpriteAnimKeysDic[id];
+            int count = _totalSpriteAnimDict.Count;
+            List<string> spriteAnimKeys = _textSpriteAnimKeysDict[id];
             for (int i = 0; i < spriteAnimKeys.Count; ++i)
             {
-                if (mTotalSpriteAnimDic.ContainsKey(spriteAnimKeys[i]))
-                {
-                    mTotalSpriteAnimDic.Remove(spriteAnimKeys[i]);
-                }
+                var animKey = spriteAnimKeys[i];
+                _totalSpriteAnimDict.Remove(animKey);
             }
-            mTextSpriteAnimKeysDic.Remove(id);
+            _textSpriteAnimKeysDict.Remove(id);
 
-            if (count != mTotalSpriteAnimDic.Count)
+            if (count != _totalSpriteAnimDict.Count)
             {
-                //Debug.Log("mInlineSpriteAnimInfoDic Count:" + mTotalSpriteAnimDic.Count);
-                UpdateMeshCapacity();
+                _UpdateMeshCapacity();
             }
         }
 
-        public void UpdateSpriteAnimInfos(RichText inlineText, List<SpriteAnimInfo> inputSpriteAnimInfos)
+        public void UpdateSpriteAnimInfos (RichText richText, List<SpriteAnimInfo> inputSpriteAnimInfos)
         {
             Profiler.BeginSample("inlineSpriteManager UpdateSpriteAnimInfos ");
 
-            if ( inlineText == null)
+            if (richText == null)
             {
                 return;
             }
 
             bool isUpdateMeshData = false;
 
-            int id = inlineText.GetInstanceID();
+            int id = richText.GetInstanceID();
             List<string> oldSpriteKeys= null;
+            _textSpriteAnimKeysDict.TryGetValue(id, out oldSpriteKeys);
 
-            if (mTextSpriteAnimKeysDic.ContainsKey(id))
-            {
-                oldSpriteKeys = mTextSpriteAnimKeysDic[id];
-            }
-
-            //input is null
+            // input is null
             if (inputSpriteAnimInfos == null)
             {
                 if (oldSpriteKeys != null)
                 {
                     for (int i = 0; i < oldSpriteKeys.Count; ++i)
                     {
-                        mTotalSpriteAnimDic.Remove(oldSpriteKeys[i]);
+                        _totalSpriteAnimDict.Remove(oldSpriteKeys[i]);
                     }
-                    mTextSpriteAnimKeysDic.Remove(id);
+                    _textSpriteAnimKeysDict.Remove(id);
                     isUpdateMeshData = true;
                 }
             }
             else
             {
-                int oldCount = mTotalSpriteAnimDic.Count;
+                int oldCount = _totalSpriteAnimDict.Count;
                 if (oldSpriteKeys != null)
                 {
                     for (int i = 0; i < oldSpriteKeys.Count; ++i)
                     {
-                        mTotalSpriteAnimDic.Remove(oldSpriteKeys[i]);
+                        _totalSpriteAnimDict.Remove(oldSpriteKeys[i]);
                     }
                 }
 
                 List<string> keys = new List<string>();
                 for (int i = 0; i < inputSpriteAnimInfos.Count; ++i)
                 {
-                    SpriteAnimInfo temp = inputSpriteAnimInfos[i];
-                    if (temp != null && temp.IsValid())
+                    SpriteAnimInfo animInfo = inputSpriteAnimInfos[i];
+                    if (animInfo != null && animInfo.IsValid())
                     {
-                        mTotalSpriteAnimDic[temp.Key] = temp;
-                        keys.Add(temp.Key);
+                        _totalSpriteAnimDict[animInfo.Key] = animInfo;
+                        keys.Add(animInfo.Key);
                     }
                 }
 
                 if (keys.Count > 0)
                 {
-                    mTextSpriteAnimKeysDic[id] = keys;
+                    _textSpriteAnimKeysDict[id] = keys;
                 }
                 else
                 {
                     if (oldSpriteKeys != null)
                     {
-                        mTextSpriteAnimKeysDic.Remove(id);
+                        _textSpriteAnimKeysDict.Remove(id);
                     }
                 }
 
-                if (oldCount != mTotalSpriteAnimDic.Count)
+                if (oldCount != _totalSpriteAnimDict.Count)
                 {
                     isUpdateMeshData = true;
                 }
@@ -262,31 +222,30 @@ namespace Unique.UI
 
             if (isUpdateMeshData)
             {
-                //Debug.LogWarning("mInlineSpriteAnimInfoDic Count:" + mSpriteAnimInfoDic.Count);
-                UpdateMeshCapacity();
+                _UpdateMeshCapacity();
             }
-
 
             Profiler.EndSample ();
         }
 
-        public void UpdatePositon(RichText inlineText, List<SpriteAnimInfo> inputSpriteAnimInfos)
+        public void UpdatePositon (RichText richText, List<SpriteAnimInfo> inputSpriteAnimInfos)
         {
-            UpdateSpriteAnimInfos(inlineText, inputSpriteAnimInfos);
-            DrawSprite();
+            UpdateSpriteAnimInfos(richText, inputSpriteAnimInfos);
+            _DrawSprite();
         }
 
-        void LateUpdate()
+        private void LateUpdate ()
         {
-            if (mTotalSpriteAnimDic == null)
+            if (_totalSpriteAnimDict == null)
             {
                 return;
             }
 
-            List<string> keys = mTotalSpriteAnimDic.Keys.ToList();
-            for (int i = 0 ; i < keys.Count ; ++i)
+            var iter = _totalSpriteAnimDict.GetEnumerator();
+            while (iter.MoveNext())
             {
-                SpriteAnimInfo temp = mTotalSpriteAnimDic[keys[i]];
+                var pair = iter.Current;
+                SpriteAnimInfo temp = pair.Value;
                 if (!temp.IsValid())
                 {
                     continue;
@@ -304,103 +263,112 @@ namespace Unique.UI
                     }
                 }
             }
-            DrawSprite();
+
+            _DrawSprite();
         }
 
-        //TODO 分配策略 在文本修改比较多的情况下 分配国语频繁
-        void UpdateMeshCapacity()
+        //TODO 分配策略 在文本修改比较多的情况下 分配过于频繁
+        private void _UpdateMeshCapacity ()
         {
             Profiler.BeginSample("inlineSpriteManager UpdateMeshCapacity ");
 
-            if (mTotalSpriteAnimDic == null || mTotalSpriteAnimDic.Count == 0)
+            if (_totalSpriteAnimDict == null || _totalSpriteAnimDict.Count == 0)
             {
-                mTempVertices = null;
-                mTempUv = null;
-                mTempTriangles = null;
+                _tempVertices = null;
+                _tempUv = null;
+                _tempTriangles = null;
                 return;
             }
-
-            int count = mTotalSpriteAnimDic.Count;
-            int needUvCount = count * 4 ;
-            int needVertexCount = count * 4 ;
-            int needTrianglesCount = count * 6 ;
-
-            if (mTempUv == null || mTempUv.Length != needUvCount)
-            {
-                mTempUv = new Vector2[needUvCount];
-            }
-
-            if (mTempVertices == null || mTempVertices.Length != needVertexCount)
-            {
-                mTempVertices = new Vector3[needVertexCount];
-            }
-
-            if (mTempTriangles  == null || mTempTriangles.Length != needTrianglesCount)
-            {
-                mTempTriangles = new int[needTrianglesCount];
-            }
+     
+            int count = _totalSpriteAnimDict.Count;
+            _tempUv = _tempUv.SetCapacityEx(count * 4);
+            _tempVertices = _tempVertices.SetCapacityEx(count * 4);
+            _tempTriangles = _tempTriangles.SetCapacityEx(count * 6);
 
             Profiler.EndSample ();
         }
 
-        public void DrawSprite()
+        private void _DrawSprite ()
         {
             Profiler.BeginSample("inline SpriteManager DrawSprite");
 
-            if (mTotalSpriteAnimDic.Count == 0)
+            if (_totalSpriteAnimDict.Count == 0)
             {
-                UpdateMesh();
+                _UpdateMesh();
                 return;
             }
 
-            List<string> keys = mTotalSpriteAnimDic.Keys.ToList();
-
             int index = 0;
-            for (int i = 0; i < keys.Count; ++i)
+            var iter = _totalSpriteAnimDict.GetEnumerator();
+            while (iter.MoveNext())
             {
-                SpriteAnimInfo temp = mTotalSpriteAnimDic[keys[i]];
-                if (temp == null || !temp.IsValid())
+                var pair = iter.Current;
+                SpriteAnimInfo animInfo = pair.Value;
+                if (animInfo == null || !animInfo.IsValid())
                 {
                     continue;
                 }
 
-                if (temp.Vertices == null)
+                if (animInfo.Vertices == null)
                 {
                     continue;
                 }
 
-                Array.Copy(temp.Vertices, 0, mTempVertices, index * 4, temp.Vertices.Length);
-                temp.GetUv(ref mTempUv , index * 4);
+                Array.Copy(animInfo.Vertices, 0, _tempVertices, index * 4, animInfo.Vertices.Length);
+                animInfo.GetUV(ref _tempUv , index * 4);
 
                 int startIndex = index * 6;
-                mTempTriangles[startIndex + 0] = 0 + 4 * index;
-                mTempTriangles[startIndex + 1] = 1 + 4 * index;
-                mTempTriangles[startIndex + 2] = 2 + 4 * index;
+                _tempTriangles[startIndex + 0] = 0 + 4 * index;
+                _tempTriangles[startIndex + 1] = 1 + 4 * index;
+                _tempTriangles[startIndex + 2] = 2 + 4 * index;
 
-                mTempTriangles[startIndex + 3] = 1 + 4 * index;
-                mTempTriangles[startIndex + 4] = 0 + 4 * index;
-                mTempTriangles[startIndex + 5] = 3 + 4 * index;
+                _tempTriangles[startIndex + 3] = 1 + 4 * index;
+                _tempTriangles[startIndex + 4] = 0 + 4 * index;
+                _tempTriangles[startIndex + 5] = 3 + 4 * index;
 
                 index++;
             }
 
             Profiler.EndSample ();
 
-            UpdateMesh();
+            _UpdateMesh();
         }
 
-        private void UpdateMesh()
+        private void _UpdateMesh ()
         {
             Profiler.BeginSample("inline SpriteManager DrawSprite UpdateMesh");
 
-            Mesh newSpriteMesh = new Mesh();
-            newSpriteMesh.vertices = mTempVertices;
-            newSpriteMesh.uv = mTempUv;
-            newSpriteMesh.triangles = mTempTriangles;
-            GetComponent<CanvasRenderer>().SetMesh(newSpriteMesh);
+            var mesh = new Mesh ();
+            mesh.vertices = _tempVertices;
+            mesh.uv = _tempUv;
+            mesh.triangles = _tempTriangles;
+            GetComponent<CanvasRenderer>().SetMesh(mesh);
             GetComponent<InlineSprite>().UpdateMaterial();
 
             Profiler.EndSample();
         }
+
+        /// <summary>
+        /// 所有动画数据，使用前检查Key是否有效
+        /// </summary>
+        private Dictionary<string, SpriteAnimInfo> _totalSpriteAnimDict = new Dictionary<string, SpriteAnimInfo>();
+
+        /// <summary>
+        /// Text对应的表情动画Key值
+        /// </summary>
+        private Dictionary<int, List<string>> _textSpriteAnimKeysDict = new Dictionary<int, List<string>>();
+
+        /// <summary>
+        /// 当前激活中的Text
+        /// </summary>
+        private Dictionary<int, RichText> _activeTextDict = new Dictionary<int, RichText>();
+
+        private readonly float mSpriteAnimTimeGap = 0.2f;
+
+        //Mesh Data Cache
+        private Vector3[] _tempVertices;
+        private Vector2[] _tempUv;
+        private int[] _tempTriangles;
+
     }
 }

@@ -39,7 +39,7 @@ namespace Unique.UI
             }
         }
 
-        protected override void Awake()
+        protected override void Awake ()
         {
             if (inlineSpriteAsset != null && inlineSpriteAsset.TextureSource != null)
             {
@@ -57,22 +57,17 @@ namespace Unique.UI
             base.Awake();
         }
 
-        public SpriteAssetInfo GetSpriteInfo(int index)
+        public SpriteAssetInfo GetSpriteInfo (int index)
         {
             return RichTextManager.Instance.GetSpriteInfo(index);
         }
 
-        public SpriteAssetInfo GetSpriteInfo(string name)
+        public SpriteAssetInfo GetSpriteInfo (string name)
         {
             return RichTextManager.Instance.GetSpriteInfo(name);
         }
 
-        public List<SpriteAssetInfo> GetSpriteInfosFromPrefix(string namePrefix)
-        {
-            return RichTextManager.Instance.GetSpriteInfosFromPrefix(namePrefix);
-        }
-
-        public List<string> GetSpriteNamesFromPrefix(string namePrefix)
+        public List<string> GetSpriteNamesFromPrefix (string namePrefix)
         {
             return RichTextManager.Instance.GetSpriteNamesFromPrefix(namePrefix);
         }

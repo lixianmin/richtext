@@ -28,27 +28,27 @@ namespace Unique.UI
         //Resource/路径下
         private readonly string defaultSpriteAssetResPath = "emoji/default_emoji";
 
-        private static RichTextManager mInstance;
+        private static RichTextManager _instance;
         public  static RichTextManager Instance
         {
             get
             {
-                if (mInstance == null)
+                if (_instance == null)
                 {
                     #if UNITY_EDITOR
-                    mInstance = FindObjectOfType<RichTextManager>() ;
+                    _instance = FindObjectOfType<RichTextManager>() ;
                     #endif
 
-                    if (mInstance == null) 
+                    if (_instance == null) 
                     {
-                        mInstance = new GameObject ("(Singleton) " + typeof(RichTextManager).Name).AddComponent<RichTextManager> ();
+                        _instance = new GameObject ("(Singleton) " + typeof(RichTextManager).Name).AddComponent<RichTextManager> ();
                     }
                 }
-                return mInstance;
+                return _instance;
             }
         }
 
-        void Awake()
+        private void Awake ()
         {
             CheckSpriteAsset();
         }
@@ -81,7 +81,7 @@ namespace Unique.UI
         /// 获得资源中所有表情名字
         /// </summary>
         /// <returns></returns>
-        public List<string> GetAllEmojiNames()
+        public List<string> GetAllEmojiNames ()
         {
             if (inlineSpriteAsset == null)
             {
@@ -157,9 +157,9 @@ namespace Unique.UI
                 mSpriteInfoDic = new Dictionary<string, SpriteAssetInfo>();
             }
 
-            for (int i = 0; i < inlineSpriteAsset.listSpriteInfor.Count; ++i)
+            for (int i = 0; i < inlineSpriteAsset.listSpriteInfo.Count; ++i)
             {
-                SpriteAssetInfo t = inlineSpriteAsset.listSpriteInfor[i];
+                SpriteAssetInfo t = inlineSpriteAsset.listSpriteInfo[i];
                 mSpriteInfoDic[t.name] = t;
             }
         }
@@ -176,12 +176,12 @@ namespace Unique.UI
                 return null;
             }
 
-            if (index < 0 || index >= inlineSpriteAsset.listSpriteInfor.Count)
+            if (index < 0 || index >= inlineSpriteAsset.listSpriteInfo.Count)
             {
                 return null;
             }
 
-            return inlineSpriteAsset.listSpriteInfor[index];
+            return inlineSpriteAsset.listSpriteInfo[index];
         }
 
 
@@ -253,7 +253,7 @@ namespace Unique.UI
             return sprites;
         }
 
-        public List<string> GetSpriteNamesFromPrefix(string namePrefix)
+        public List<string> GetSpriteNamesFromPrefix (string namePrefix)
         {
             List<SpriteAssetInfo> temp = GetSpriteInfosFromPrefix(namePrefix);
             if (temp == null)

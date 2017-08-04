@@ -28,17 +28,17 @@ namespace Unique.UI
 
             ve2ScorllView = GUILayout.BeginScrollView(ve2ScorllView);
             GUILayout.Label("UGUI Sprite Asset");
-            if (inlineSpriteAsset.listSpriteInfor == null)
+            if (inlineSpriteAsset.listSpriteInfo == null)
             {
                 return;
             }
 
-            for (int i = 0; i < inlineSpriteAsset.listSpriteInfor.Count; i++)
+            for (int i = 0; i < inlineSpriteAsset.listSpriteInfo.Count; i++)
             {
                 GUILayout.Label("\n");
                 //     EditorGUILayout.ObjectField("", InlineSpriteAsset.listSpriteInfor[i].sprite, typeof(Sprite),false);
                 //EditorGUILayout.IntField("ID:", inlineSpriteAsset.listSpriteInfor[i].ID);
-                EditorGUILayout.TextField("name:", inlineSpriteAsset.listSpriteInfor[i].name);
+                EditorGUILayout.TextField("name:", inlineSpriteAsset.listSpriteInfo[i].name);
                 //   EditorGUILayout.Vector2Field("povit:", InlineSpriteAsset.listSpriteInfor[i].pivot);
                 //     EditorGUILayout.RectField("rect:", inlineSpriteAsset.listSpriteInfor[i].rect);
                 //    GUILayout.Label("\n");

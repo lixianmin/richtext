@@ -24,6 +24,6 @@ namespace Unique.UI
     public class InlineSpriteAsset : ScriptableObject
     {
         public Texture TextureSource;
-        public List<SpriteAssetInfo> listSpriteInfor;
+        public List<SpriteAssetInfo> listSpriteInfo;
     }
 }
