@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Unique.UI
+namespace Unique.RichText
 {
     /// <summary>
     /// 超链接信息类
     /// </summary>
-    internal class HrefTagInfo
+    internal class HrefTag
     {
         public static MatchCollection GetTextMatches (string text)
         {

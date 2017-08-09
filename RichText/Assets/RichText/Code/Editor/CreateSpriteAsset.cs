@@ -4,78 +4,76 @@ created:    2017-08-03
 author:     lixianmin
 
 *********************************************************************/
-using UnityEngine;
-using System.Collections;
-using UnityEditor;
-using System.IO;
-using System.Collections.Generic;
 
-namespace Unique.UI
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+using UnityEditor;
+
+namespace Unique.RichText
 {
     public static class CreateSpriteAsset
     {
-        [MenuItem("Assets/Create/UGUI Sprite Asset",false,10)]
-        static void main ()
+        [MenuItem("Assets/Create/Create InlineSpriteAsset", false, 10)]
+        private static void _CreateInlineSpriteAsset ()
         {
             Object target = Selection.activeObject;
-            if (target == null || target.GetType() != typeof (Texture2D))
+            var targetTexture = target as Texture2D;
+            if (null == targetTexture)
             {
                 return;
             }
 
-            Texture2D sourceTex = target as Texture2D;
-            //整体路径
-            string filePathWithName = AssetDatabase.GetAssetPath(sourceTex);
-            //带后缀的文件名
-            //string fileNameWithExtension = Path.GetFileName(filePathWithName);
-            //string filePath = filePathWithName.Replace(fileNameWithExtension, "");
-
-
+            string filePathWithName = AssetDatabase.GetAssetPath(targetTexture);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePathWithName);
+            var exportPath = _targetPath + fileNameWithoutExtension + ".asset";
 
-            InlineSpriteAsset inlineSpriteAsset = AssetDatabase.LoadAssetAtPath(TargetPath + fileNameWithoutExtension + ".asset", typeof(InlineSpriteAsset)) as InlineSpriteAsset;
-//            bool isNewAsset = inlineSpriteAsset == null ? true : false;
-            // if (isNewAsset)
-            {
-                inlineSpriteAsset = ScriptableObject.CreateInstance<InlineSpriteAsset>();
-                inlineSpriteAsset.TextureSource = sourceTex;
-                inlineSpriteAsset.listSpriteInfo = GetSpritesInfo(sourceTex);
+            var inlineSpriteAsset = ScriptableObject.CreateInstance<InlineSpriteAsset>();
+            inlineSpriteAsset.TextureSource = targetTexture;
+            inlineSpriteAsset.spriteItems = GetSpriteItemAssets(targetTexture);
 
-                AssetDatabase.CreateAsset(inlineSpriteAsset, TargetPath + fileNameWithoutExtension + ".asset");
-            }
-
-            Debug.Log("_______________________________File:" + fileNameWithoutExtension + "Gerenated sucess");
+            AssetDatabase.CreateAsset(inlineSpriteAsset, exportPath);
+            Debug.LogFormat("InlineSpriteAsset: {0} generated successfully", exportPath);
         }
 
-        public static List<SpriteAssetInfo> GetSpritesInfo (Texture2D tex)
+        public static List<SpriteItemAsset> GetSpriteItemAssets (Texture2D texture)
         {
-            List<SpriteAssetInfo> m_sprites = new List<SpriteAssetInfo>();
+            if (null == texture)
+            {
+                return  null;
+            }
 
-            string filePath = UnityEditor.AssetDatabase.GetAssetPath(tex);
+            string filepath = AssetDatabase.GetAssetPath(texture);
+            Object[] objects = AssetDatabase.LoadAllAssetsAtPath(filepath);
 
-            Object[] objects = UnityEditor.AssetDatabase.LoadAllAssetsAtPath(filePath);
-
-            Vector2 newTexSize = new Vector2(tex.width, tex.height);
+            Vector2 textureSize = new Vector2(texture.width, texture.height);
+            var sprites = new List<SpriteItemAsset>(objects.Length);
 
             for (int i = 0; i < objects.Length; i++)
             {
-                if (objects[i] is Sprite)
+                Sprite sprite = objects[i] as Sprite;
+                if (null == sprite)
                 {
-                    SpriteAssetInfo temp = new SpriteAssetInfo();
-                    Sprite sprite = objects[i] as Sprite;
-                    temp.name = sprite.name;
-                    Rect newRect = new Rect();
-                    newRect.x = sprite.rect.x / newTexSize.x;
-                    newRect.y = sprite.rect.y / newTexSize.y;
-                    newRect.width = sprite.rect.width / newTexSize.x;
-                    newRect.height = sprite.rect.height / newTexSize.y;
-                    temp.rect = newRect;
-                    m_sprites.Add(temp);
+                    continue;
                 }
+
+                SpriteItemAsset itemAsset = new SpriteItemAsset();
+                itemAsset.name = sprite.name;
+
+                Rect rect = new Rect();
+                rect.x = sprite.rect.x / textureSize.x;
+                rect.y = sprite.rect.y / textureSize.y;
+                rect.width = sprite.rect.width / textureSize.x;
+                rect.height = sprite.rect.height / textureSize.y;
+
+                itemAsset.rect = rect;
+                sprites.Add(itemAsset);
             }
-            return m_sprites;
+
+            return sprites;
         }
 
-        private static string TargetPath = "Assets/Resources/emoji/";
+        private static string _targetPath = "Assets/Resources/emoji/";
     }
 }
