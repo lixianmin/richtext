@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Unique.RichText
 {
     [System.Serializable]
-    public class SpriteItemAsset
+    public class SpriteItem
     {
         public string name;
         public Rect rect;

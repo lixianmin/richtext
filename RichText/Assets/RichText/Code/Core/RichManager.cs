@@ -12,7 +12,7 @@ namespace Unique.RichText
 {
     public class RichManager
     {
-        public void AddSpriteAsset (string key, SpriteAsset spriteAsset)
+        public void AddSpriteData (string key, SpriteData spriteAsset)
         {
             if (null == key || null == spriteAsset)
             {
@@ -22,10 +22,10 @@ namespace Unique.RichText
             _spriteMap[key] = spriteAsset;
         }
 
-        public SpriteAsset GetSpriteAsset (string key)
+        public SpriteData GetSpriteData (string key)
         {
             key = key ?? string.Empty;
-            var sprite = _spriteMap[key] as SpriteAsset;
+            var sprite = _spriteMap[key] as SpriteData;
             return sprite;
         }
 

@@ -5,6 +5,7 @@ author:     lixianmin
 
 *********************************************************************/
 
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,51 +18,32 @@ namespace Unique.RichText
         {
             if (string.IsNullOrEmpty(strText) || -1 == strText.IndexOf("quad"))
             {
-                SpriteTagManger.Instance.Reset(0);
+                _ResetSpriteTags(0);
                 return;
             }
 
             int index = 0;
-            foreach (Match match in _constSpriteTagRegex.Matches(strText))
+            foreach (Match match in SpriteTag.GetMatches(strText))
             {
-                var groups = match.Groups;
-                var name = groups[1].Value;
-
-                if (string.IsNullOrEmpty(name))
+                SpriteTag tag = _GetSpriteTag(index);
+                var isOk = tag.SetValue(match);
+                if (isOk)
                 {
-                    continue;
+                    ++index;
                 }
-
-                SpriteTag tag = SpriteTagManger.Instance.GetTag(index);
-
-                tag.SetName(name);
-                tag.SetVertexIndex(match.Index);
-                float size = float.Parse(groups[2].Value);
-                float width = float.Parse(groups[3].Value);
-
-                float offset = 0.0f;
-                if (width > 1.0f)
-                {
-                    offset = (width - 1.0f) * 0.5f;
-                }
-
-                tag.Size   = new Vector2(size, size);
-                tag.Offset = offset;
-
-                ++index;
             }
 
-            SpriteTagManger.Instance.Reset(index);
+            _ResetSpriteTags(index);
         }
 
         private void _HandleSpriteTag (VertexHelper toFill)
         {
-            if (null == _spriteAsset)
+            if (null == _spriteData)
             {
                 return;
             }
 
-            var spriteTags = SpriteTagManger.Instance.GetTags();
+            var spriteTags = _spriteTags;
             var count = spriteTags.Count;
             for (int i = 0; i < count; i++)
             {
@@ -72,7 +54,7 @@ namespace Unique.RichText
                     continue;
                 }
 
-                SpriteItemAsset spriteItem = _spriteAsset.GetSpriteItem(name);
+                SpriteItem spriteItem = _spriteData.GetSpriteItem(name);
                 if (null == spriteItem)
                 {
                     continue;
@@ -80,24 +62,36 @@ namespace Unique.RichText
 
                 UIVertex v = new UIVertex();
                 var vertexIndex = tag.GetVertexIndex() * 4;
-                toFill.PopulateUIVertex(ref v, vertexIndex + 3);
+                var fetchIndex = vertexIndex + 3;
+                if (fetchIndex >= toFill.currentVertCount)
+                {
+                    continue;
+                }
+
+                toFill.PopulateUIVertex(ref v, fetchIndex);
+
                 Vector3 textPos = v.position;
-                float xOffset   = tag.Offset * tag.Size.x;
+                var tagSize = tag.GetSize();
+                float xOffset   = tag.GetOffset() * tagSize;
                 var rect = spriteItem.rect;
 
+                // pos = (0, 0)
                 var position = new Vector3(xOffset, 0, 0) + textPos;
                 var uv0 = new Vector2(rect.x, rect.y);
                 _SetSpriteVertex(toFill, vertexIndex, position, uv0);
 
-                position = new Vector3(xOffset + tag.Size.x , 0, 0) + textPos;
+                // pos = (1, 0)
+                position = new Vector3(xOffset + tagSize , 0, 0) + textPos;
                 uv0 = new Vector2(rect.x + rect.width, rect.y);
                 _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
-                position = new Vector3(xOffset + tag.Size.x , tag.Size.y, 0) + textPos;
+                // pos = (1, 1)
+                position = new Vector3(xOffset + tagSize , tagSize, 0) + textPos;
                 uv0 = new Vector2(rect.x + rect.width , rect.y + rect.height);
                 _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
-                position = new Vector3(xOffset, tag.Size.y, 0) + textPos;
+                // pos = (0, 1)
+                position = new Vector3(xOffset, tagSize, 0) + textPos;
                 uv0 = new Vector2(rect.x, rect.y + rect.height);
                 _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
             }
@@ -113,6 +107,33 @@ namespace Unique.RichText
             toFill.SetUIVertex(v, vertexIndex);
         }
 
-        private static readonly Regex _constSpriteTagRegex = new Regex(@"<quad name=(.+?)\s+size=(\d*\.?\d+%?)\s+width=(\d*\.?\d+%?)\s*/>", RegexOptions.Singleline);
+        private SpriteTag _GetSpriteTag (int index)
+        {
+            if (index >= 0)
+            {
+                _spriteTags.EnsureSizeEx(index + 1);
+                SpriteTag tag = _spriteTags[index] ?? (_spriteTags[index] = new SpriteTag());
+                return tag;
+            }
+
+            return null;
+        }
+
+        private void _ResetSpriteTags (int startIndex)
+        {
+            var count = _spriteTags.Count;
+            for (int i= startIndex; i< count; ++i)
+            {
+                var tag = _spriteTags[i];
+                tag.Reset();
+            }
+        }
+
+        public IList<SpriteTag> GetSpriteTags ()
+        {
+            return _spriteTags;
+        }
+
+        private readonly List<SpriteTag> _spriteTags = new List<SpriteTag>();
     }
 }

@@ -14,9 +14,9 @@ namespace Unique.RichText
     /// <summary>
     /// 表情图片序列化信息
     /// </summary>
-    public class InlineSpriteAsset : ScriptableObject
+    public class SpriteAsset : ScriptableObject
     {
-        public Texture TextureSource;
-        public List<SpriteItemAsset> spriteItems;
+        public Texture texture;
+        public List<SpriteItem> spriteItems;
     }
 }

@@ -5,34 +5,22 @@ author:     lixianmin
 
 *********************************************************************/
 
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
-using System.Text;
 
 namespace Unique.RichText
 {
-    /// 已知问题：
-    /// 1. 下划线支持: 不支持超链接与下划线混排（顶点数据获取方式）, 换行bound计算问题，下划线颜色问题
-
     [ExecuteInEditMode]
-    public partial class RichText : Text, IPointerClickHandler
+    public partial class RichText : Text
     {
-        [System.Serializable]
-        public class HrefClickEvent : UnityEvent<string>
-        {
-
-        }
-
         protected override void OnEnable ()
         {
-            base.alignByGeometry = true;
-            base.supportRichText = true;
+            this.supportRichText = true;
 
             _ParseText();
             SetVerticesDirty();
@@ -45,11 +33,20 @@ namespace Unique.RichText
             base.OnDisable();
         }
 
+        protected override void OnDestroy ()
+        {
+            var manager = MaterialManager.Instance;
+            var lastSpriteTexture = manager.GetSpriteTexture(material);
+            manager.DetachTexture(this, lastSpriteTexture);
+
+            base.OnDestroy();
+        }
+
         public override string text
         {
             get
             {
-                return base.text;
+                return m_Text;
             }
 
             set
@@ -62,6 +59,7 @@ namespace Unique.RichText
                     }
 
                     m_Text = string.Empty;
+
                     _ParseText();
                     SetVerticesDirty();
                 }
@@ -69,111 +67,19 @@ namespace Unique.RichText
                 {
                     m_Text = value;
                     _ParseText();
+
                     SetVerticesDirty();
                     SetLayoutDirty();
                 }
             }
         }
 
-        public override void SetVerticesDirty ()
-        {
-            if (!IsActive())
-            {
-                return;
-            }
-
-            // 处理编辑下文本修改问题，默认TextEditor会绕开override的text实现
-            if (Application.isEditor)
-            {
-                _ParseText();
-            }
-
-            base.SetVerticesDirty();
-        }
-
         private void _ParseText ()
         {
-            _parseOutputText = this.text;
-
-            var leftBracketIndex = _parseOutputText.IndexOf ('[');
-            if (leftBracketIndex >= 0 && _parseOutputText.IndexOf(']', leftBracketIndex) > 0)
-            {
-                _parseOutputText = _ReplaceSimpleSpriteTags(_parseOutputText);
-            }
-
-            _parseOutputText = _ParseHrefTags(_parseOutputText);
+            _parseOutputText = text;
             _ParseSpriteTags(_parseOutputText);
         }
 
-        //计算在顶点中起始和结束位置，考虑<u></u>的影响，其他标签暂且不考虑
-        //归根到底是计算文字在顶点数据中位置方式不太靠谱
-        protected string _ParseHrefTags (string strText)
-        {
-            if (string.IsNullOrEmpty(strText) || strText.IndexOf("href") == -1)
-            {
-                for (int i = 0; i < _hrefTagInfos.Count; ++i)
-                {
-                    _hrefTagInfos[i].Reset();
-                }
-
-                return strText;
-            }
-
-            _sbTextBuilder.Length = 0;
-
-            var indexText = 0;
-            int index = 0;
-            foreach (Match match in HrefTag.GetTextMatches(strText))
-            {
-                var notMatchText = strText.Substring(indexText, match.Index - indexText);
-                _sbTextBuilder.Append(notMatchText);
-
-                _hrefTagInfos.EnsureSizeEx(index+1);
-                HrefTag hrefInfo = _hrefTagInfos[index] ?? (_hrefTagInfos[index] = new HrefTag());
-
-                var groups = match.Groups;
-                hrefInfo.StartIndex = _sbTextBuilder.Length;
-                hrefInfo.EndIndex = _sbTextBuilder.Length + groups[2].Length;
-                hrefInfo.Name = groups[1].Value;
-
-                _sbTextBuilder.Append(groups[2].Value);
-                indexText = match.Index + match.Length;
-                index ++;
-            }
-            _sbTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
-
-            if (index < _hrefTagInfos.Count)
-            {
-                int count = _hrefTagInfos.Count;
-                for (int i = index; i < count; ++i)
-                {
-                    _hrefTagInfos[i].Reset();
-                }
-            }
-
-            return _sbTextBuilder.ToString();
-        }
-
-        private string _ReplaceSimpleSpriteTags (string strText)
-        {
-            Profiler.BeginSample("RichText._ReplaceSimpleSpriteTags()");
-
-            _sbTextBuilder.Length = 0;
-            var indexText = 0;
-            foreach (Match match in _constSimpleSpriteTagRegex2.Matches(strText))
-            {
-                _sbTextBuilder.Append(strText.Substring(indexText, match.Index - indexText));
-                string strSprite = "<quad name=" + match.Groups[1].ToString().Trim() + " size=" + fontSize + " width=1.2/>";
-                _sbTextBuilder.Append(strSprite);
-                indexText = match.Index + match.Length;
-            }
-
-            _sbTextBuilder.Append(strText.Substring(indexText, strText.Length - indexText));
-            Profiler.EndSample();
-
-            return _sbTextBuilder.ToString();
-        }
-            
         private void LateUpdate ()
         {
             if (rectTransform.hasChanged)
@@ -252,72 +158,53 @@ namespace Unique.RichText
                 }
             }
 
-            _HandleHrefTag(toFill);
             _HandleSpriteTag(toFill);
             m_DisableFontTextureRebuiltCallback = false;
         }
-       
-        private void _HandleHrefTag (VertexHelper toFill)
+
+        public void SetSpriteData (SpriteData spriteData)
         {
-            if (_hrefTagInfos.IsNullOrEmptyEx())
+            _spriteData = spriteData;
+
+            if (null == spriteData)
             {
                 return;
             }
 
-            var count = _hrefTagInfos.Count;
-            for(int i = 0 ; i < count ; ++i)
+            var mat = material;
+            var manager = MaterialManager.Instance;
+            var lastSpriteTexture = manager.GetSpriteTexture(mat);
+            var spriteTexture = spriteData.GetTexture();
+
+            var isTextureChanged = lastSpriteTexture != spriteTexture;
+            if (isTextureChanged)
             {
-                HrefTag hrefTag = _hrefTagInfos[i];
-                if (!hrefTag.IsValid())
-                {
-                    continue;
-                }
-
-                int vertexStart = hrefTag.StartIndex * 4;
-                int vertexEnd = (hrefTag.EndIndex - 1) * 4 + 3;
-
-                _hrefTagInfos[i].CalcBounds(toFill, vertexStart, vertexEnd);
+                manager.DetachTexture(this, lastSpriteTexture);
+                manager.AttachTexture(this, spriteTexture);
             }
         }
 
-        // 点击事件检测是否点击到超链接文本
-        public void OnPointerClick (PointerEventData eventData)
+        public SpriteData GetSpriteData ()
         {
-            Vector2 lp;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, eventData.position, eventData.pressEventCamera, out lp);
+            return _spriteData;
+        }
 
-            foreach (var hrefInfo in _hrefTagInfos)
+        #if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+
+            if (!IsActive())
             {
-                if (hrefInfo.HitTest(lp))
-                {
-                    _onHrefClick.Invoke(hrefInfo.Name);
-                    return;
-                }
+                return;
             }
-        }
 
-        public void SetSpriteAsset (SpriteAsset spriteAsset)
-        {
-            _spriteAsset = spriteAsset;
+            _ParseText();
         }
-
-        private HrefClickEvent _onHrefClick = new HrefClickEvent();
-        public HrefClickEvent onHrefClick
-        {
-            get { return _onHrefClick; }
-            set { _onHrefClick = value; }
-        }
+        #endif
 
         private readonly UIVertex[] _tempVerts = new UIVertex[4];
-        private SpriteAsset _spriteAsset;
+        private SpriteData _spriteData;
         private string _parseOutputText;
-
-        private readonly List<HrefTag> _hrefTagInfos = new List<HrefTag>();
-
-        private static readonly StringBuilder _sbTextBuilder = new StringBuilder();
-
-        private static readonly Regex _constSimpleSpriteTagRegex2 = new Regex(@"\[(.+?)\]", RegexOptions.Singleline);
-//        private static readonly Regex _underlineRegex = new Regex(@"<u>(.+?)</u>", RegexOptions.Singleline);
     }
-
 }

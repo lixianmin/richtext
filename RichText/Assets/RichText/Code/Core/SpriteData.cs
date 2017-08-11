@@ -11,14 +11,14 @@ using UnityEngine;
 
 namespace Unique.RichText
 {
-    public class SpriteAsset
+    public class SpriteData
     {
-        private SpriteAsset ()
+        private SpriteData ()
         {
             
         }
 
-        public static SpriteAsset Create (Texture texture, IList<SpriteItemAsset> spriteItems)
+        public static SpriteData Create (Texture texture, IList<SpriteItem> spriteItems)
         {
             if (null == texture)
             {
@@ -26,7 +26,7 @@ namespace Unique.RichText
                 return null;
             }
 
-            var spriteAsset = new SpriteAsset();
+            var spriteAsset = new SpriteData();
             spriteAsset._texture = texture;
 
             if (null != spriteItems)
@@ -42,7 +42,7 @@ namespace Unique.RichText
             return spriteAsset;
         }
 
-        private void _AddSpriteItem (SpriteItemAsset item)
+        private void _AddSpriteItem (SpriteItem item)
         {
             if (null == item || null == item.name)
             {
@@ -52,11 +52,30 @@ namespace Unique.RichText
             _spriteMap[item.name] = item;
         }
 
-        public SpriteItemAsset GetSpriteItem (string name)
+        public SpriteItem GetSpriteItem (string name)
         {
             name = name ?? string.Empty;
-            var spriteItem = _spriteMap[name] as SpriteItemAsset;
+            var spriteItem = _spriteMap[name] as SpriteItem;
             return spriteItem ?? _defaultSpriteItem;
+        }
+
+        public SpriteItem GetRandomSpriteItem ()
+        {
+            var count = _spriteMap.Count;
+            if (count > 0)
+            {
+                var iter = _spriteMap.GetEnumerator();
+                var index = UnityEngine.Random.Range(0, count - 1);
+                for (int i= 0; i<= index; ++i)
+                {
+                    iter.MoveNext();
+                }
+
+                var spriteItem = iter.Value as SpriteItem;
+                return spriteItem;
+            }
+
+            return _defaultSpriteItem;
         }
 
         public Texture GetTexture ()
@@ -65,7 +84,7 @@ namespace Unique.RichText
         }
 
         private Texture _texture;
-        private SpriteItemAsset _defaultSpriteItem = new SpriteItemAsset { name = string.Empty, rect = new Rect(0.0f, 0.0f, 1.0f, 1.0f)};
+        private SpriteItem _defaultSpriteItem = new SpriteItem { name = string.Empty, rect = new Rect(0.0f, 0.0f, 1.0f, 1.0f)};
 
         private readonly Hashtable _spriteMap = new Hashtable();
     }

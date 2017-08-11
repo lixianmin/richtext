@@ -12,14 +12,14 @@ using UnityEditor;
 
 namespace Unique.RichText
 {
-    [CustomEditor(typeof(InlineSpriteAsset))]
+    [CustomEditor(typeof(SpriteAsset))]
     public class InlineSpriteAssetEditor : Editor
     {
-        InlineSpriteAsset inlineSpriteAsset;
+        SpriteAsset inlineSpriteAsset;
 
         public void OnEnable()
         {
-            inlineSpriteAsset = (InlineSpriteAsset)target;
+            inlineSpriteAsset = (SpriteAsset)target;
         }
         private Vector2 ve2ScorllView;
         public override void OnInspectorGUI()
