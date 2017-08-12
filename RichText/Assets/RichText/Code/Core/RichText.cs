@@ -162,33 +162,6 @@ namespace Unique.RichText
             m_DisableFontTextureRebuiltCallback = false;
         }
 
-        public void SetSpriteData (SpriteData spriteData)
-        {
-            _spriteData = spriteData;
-
-            if (null == spriteData)
-            {
-                return;
-            }
-
-            var mat = material;
-            var manager = MaterialManager.Instance;
-            var lastSpriteTexture = manager.GetSpriteTexture(mat);
-            var spriteTexture = spriteData.GetTexture();
-
-            var isTextureChanged = lastSpriteTexture != spriteTexture;
-            if (isTextureChanged)
-            {
-                manager.DetachTexture(this, lastSpriteTexture);
-                manager.AttachTexture(this, spriteTexture);
-            }
-        }
-
-        public SpriteData GetSpriteData ()
-        {
-            return _spriteData;
-        }
-
         #if UNITY_EDITOR
         protected override void OnValidate()
         {
@@ -204,7 +177,6 @@ namespace Unique.RichText
         #endif
 
         private readonly UIVertex[] _tempVerts = new UIVertex[4];
-        private SpriteData _spriteData;
         private string _parseOutputText;
     }
 }

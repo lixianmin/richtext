@@ -38,63 +38,110 @@ namespace Unique.RichText
 
         private void _HandleSpriteTag (VertexHelper toFill)
         {
-            if (null == _spriteData)
-            {
-                return;
-            }
-
             var spriteTags = _spriteTags;
             var count = spriteTags.Count;
             for (int i = 0; i < count; i++)
             {
-                SpriteTag tag = spriteTags[i];
-                var name = tag.GetName();
-                if (string.IsNullOrEmpty(name))
+                SpriteTag spriteTag = spriteTags[i];
+                var name = spriteTag.GetName();
+                var spriteData = spriteTag.GetSpriteData();
+                if (string.IsNullOrEmpty(name) || null == spriteData)
                 {
                     continue;
                 }
 
-                SpriteItem spriteItem = _spriteData.GetSpriteItem(name);
+                SpriteItem spriteItem = spriteData.GetSpriteItem(name);
                 if (null == spriteItem)
                 {
                     continue;
                 }
 
-                UIVertex v = new UIVertex();
-                var vertexIndex = tag.GetVertexIndex() * 4;
-                var fetchIndex = vertexIndex + 3;
-                if (fetchIndex >= toFill.currentVertCount)
+                switch (spriteTag.GetFillMethod())
                 {
-                    continue;
+                    case SpriteTag.FillMethod.None:
+                        _SetSpriteVertex_FillMethod_None(toFill, spriteTag, spriteItem);
+                        break;
+                    case SpriteTag.FillMethod.Horizontal:
+                        _SetSpriteVertex_FillMethod_Horizontal(toFill, spriteTag, spriteItem);
+                        break;
                 }
-
-                toFill.PopulateUIVertex(ref v, fetchIndex);
-
-                Vector3 textPos = v.position;
-                var tagSize = tag.GetSize();
-                float xOffset   = tag.GetOffset() * tagSize;
-                var rect = spriteItem.rect;
-
-                // pos = (0, 0)
-                var position = new Vector3(xOffset, 0, 0) + textPos;
-                var uv0 = new Vector2(rect.x, rect.y);
-                _SetSpriteVertex(toFill, vertexIndex, position, uv0);
-
-                // pos = (1, 0)
-                position = new Vector3(xOffset + tagSize , 0, 0) + textPos;
-                uv0 = new Vector2(rect.x + rect.width, rect.y);
-                _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
-
-                // pos = (1, 1)
-                position = new Vector3(xOffset + tagSize , tagSize, 0) + textPos;
-                uv0 = new Vector2(rect.x + rect.width , rect.y + rect.height);
-                _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
-
-                // pos = (0, 1)
-                position = new Vector3(xOffset, tagSize, 0) + textPos;
-                uv0 = new Vector2(rect.x, rect.y + rect.height);
-                _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
             }
+        }
+
+        private void _SetSpriteVertex_FillMethod_None (VertexHelper toFill, SpriteTag spriteTag, SpriteItem spriteItem)
+        {
+            UIVertex v = UIVertex.simpleVert;
+            var vertexIndex = spriteTag.GetVertexIndex() * 4;
+            var fetchIndex = vertexIndex + 3;
+            if (fetchIndex >= toFill.currentVertCount)
+            {
+                return;
+            }
+
+            toFill.PopulateUIVertex(ref v, fetchIndex);
+            Vector3 textPos = v.position;
+            var tagSize = spriteTag.GetSize();
+            float xOffset   = spriteTag.GetOffset() * tagSize.x;
+            var rect = spriteItem.rect;
+
+            // pos = (0, 0)
+            var position = new Vector3(xOffset, 0, 0) + textPos;
+            var uv0 = new Vector2(rect.x, rect.y);
+            _SetSpriteVertex(toFill, vertexIndex, position, uv0);
+
+            // pos = (1, 0)
+            position = new Vector3(xOffset + tagSize.x , 0, 0) + textPos;
+            uv0 = new Vector2(rect.x + rect.width, rect.y);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
+
+            // pos = (1, 1)
+            position = new Vector3(xOffset + tagSize.x , tagSize.y, 0) + textPos;
+            uv0 = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
+
+            // pos = (0, 1)
+            position = new Vector3(xOffset, tagSize.y, 0) + textPos;
+            uv0 = new Vector2(rect.x, rect.y + rect.height);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
+        }
+
+        private void _SetSpriteVertex_FillMethod_Horizontal (VertexHelper toFill, SpriteTag spriteTag, SpriteItem spriteItem)
+        {
+            UIVertex v = UIVertex.simpleVert;
+            var vertexIndex = spriteTag.GetVertexIndex() * 4;
+            var fetchIndex = vertexIndex + 3;
+            if (fetchIndex >= toFill.currentVertCount)
+            {
+                return;
+            }
+
+            toFill.PopulateUIVertex(ref v, fetchIndex);
+            Vector3 textPos = v.position;
+            var tagSize = spriteTag.GetSize();
+            float xOffset   = spriteTag.GetOffset() * tagSize.x;
+            var rect = spriteItem.rect;
+
+            // pos = (0, 0)
+            var position = new Vector3(xOffset, 0, 0) + textPos;
+            var uv0 = new Vector2(rect.x, rect.y);
+            _SetSpriteVertex(toFill, vertexIndex, position, uv0);
+
+            var fillAmount = spriteTag.GetFillAmount();
+
+            // pos = (1, 0)
+            position = new Vector3(xOffset + tagSize.x * fillAmount , 0, 0) + textPos;
+            uv0 = new Vector2(rect.x + rect.width * fillAmount, rect.y);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
+
+            // pos = (1, 1)
+            position = new Vector3(xOffset + tagSize.x * fillAmount , tagSize.y, 0) + textPos;
+            uv0 = new Vector2(rect.x + rect.width * fillAmount, rect.y + rect.height);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
+
+            // pos = (0, 1)
+            position = new Vector3(xOffset, tagSize.y, 0) + textPos;
+            uv0 = new Vector2(rect.x, rect.y + rect.height);
+            _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
         }
 
         private void _SetSpriteVertex (VertexHelper toFill, int vertexIndex, Vector3 position, Vector2 uv0)
@@ -112,7 +159,7 @@ namespace Unique.RichText
             if (index >= 0)
             {
                 _spriteTags.EnsureSizeEx(index + 1);
-                SpriteTag tag = _spriteTags[index] ?? (_spriteTags[index] = new SpriteTag());
+                SpriteTag tag = _spriteTags[index] ?? (_spriteTags[index] = new SpriteTag(this));
                 return tag;
             }
 

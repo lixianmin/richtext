@@ -5,6 +5,7 @@ author:     lixianmin
 
 *********************************************************************/
 
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -15,9 +16,21 @@ namespace Unique.RichText
     [System.Serializable]
     public class SpriteTag
     {
-        public SpriteTag ()
+        public enum FillMethod
         {
-            
+            None,
+            Horizontal,
+//            Vertical,
+        }
+
+        public SpriteTag (RichText richText)
+        {
+            if (null == richText)
+            {
+                throw new ArgumentNullException("richText is null.");
+            }
+
+            _richText = richText;
         }
 
         public static MatchCollection GetMatches (string strText)
@@ -32,52 +45,69 @@ namespace Unique.RichText
                 return false;
             }
 
-            // name
-            var index = 1;
-            var groups = match.Groups;
-            var name = groups[1].Value;
+            var keyCaptures = match.Groups[1].Captures;
+            var valCaptures = match.Groups[2].Captures;
 
-            if (string.IsNullOrEmpty(name))
+            var count = keyCaptures.Count;
+            if (count != valCaptures.Count)
             {
                 return false;
             }
 
-            _name = name;
-            _vertexIndex = match.Index;
-
-            // size;
+            for (int i = 0; i < keyCaptures.Count; ++i)
             {
-                ++index;
-                float size;
-                float.TryParse(groups[index].Value, out size);
-                _size = size;
-            }
-
-            // offset
-            {
-                if (groups.Count <= ++index)
-                {
-                    return true;       
-                }
-
-                float width;
-                float.TryParse(groups[index].Value, out width);
-
-                float offset = 0.0f;
-                if (width > 1.0f)
-                {
-                    offset = (width - 1.0f) * 0.5f;
-                }
-
-                _offset = offset;
+                var key = keyCaptures[i].Value;
+                var val = valCaptures[i].Value;
+                _CheckSetValue(match, key, val);
             }
 
             return true;
         }
 
+        private void _CheckSetValue (Match match, string key, string val)
+        {
+            if (key == "name")
+            {
+                SetName(val);
+                _vertexIndex = match.Index;
+            }
+            else if (key == "src")
+            {
+                var path = val;
+                var spriteData = SpriteDataManager.Instance.Get(path);
+                _SetSpriteData(spriteData);
+            }
+            else if (key == "width")
+            {
+                float width;
+                float.TryParse(val, out width);
+                _size.x = width;
+            }
+            else if (key == "height")
+            {
+                float height;
+                float.TryParse(val, out height);
+                _size.y = height;
+            }
+
+//            else if (key == "width")
+//            {
+//                float width;
+//                float.TryParse(val, out width);
+//
+//                float offset = 0.0f;
+//                if (width > 1.0f)
+//                {
+//                    offset = (width - 1.0f) * 0.5f;
+//                }
+//
+//                _offset = offset;
+//            }
+        }
+
         public void Reset ()
         {
-            _name = null;
+            SetName(null);
         }
 
         public int GetVertexIndex ()
@@ -95,7 +125,7 @@ namespace Unique.RichText
             return _name;
         }
 
-        public float GetSize ()
+        public Vector2 GetSize ()
         {
             return _size;
         }
@@ -105,13 +135,76 @@ namespace Unique.RichText
             return _offset;
         }
 
+        public void SetFillMethod (FillMethod fillMethod)
+        {
+            _fillMethod = fillMethod;
+        }
+
+        public FillMethod GetFillMethod ()
+        {
+            return _fillMethod;
+        }
+
+        public void SetFillAmount (float amount)
+        {
+            amount = Mathf.Clamp01(amount);
+
+            float eps = 0.001f;
+            var delta = _fillAmount - amount;
+            if (delta > eps || delta < -eps)
+            {
+                _fillAmount = amount;
+                _richText.SetVerticesDirty();
+            }
+        }
+
+        public float GetFillAmount ()
+        {
+            return _fillAmount;
+        }
+
+        private void _SetSpriteData (SpriteData spriteData)
+        {
+            _spriteData = spriteData;
+
+            if (null == spriteData)
+            {
+                return;
+            }
+
+            var richText = _richText;
+            var mat = richText.material;
+            var manager = MaterialManager.Instance;
+            var lastSpriteTexture = manager.GetSpriteTexture(mat);
+            var spriteTexture = spriteData.GetTexture();
+
+            var isTextureChanged = lastSpriteTexture != spriteTexture;
+            if (isTextureChanged)
+            {
+                manager.DetachTexture(richText, lastSpriteTexture);
+                manager.AttachTexture(richText, spriteTexture);
+            }
+        }
+
+        public SpriteData GetSpriteData ()
+        {
+            return _spriteData;
+        }
+
+        private RichText _richText;
+        private SpriteData _spriteData;
+
         private string _name;
         private int _vertexIndex;
 
-        private float _size;
-        private float _offset;
+        private Vector2 _size;
+        private float _offset = 0;
 
-        private static readonly string _spriteTagPattern = @"<quad name=(.+?)\s+size=(\d*\.?\d+%?)(?:\s+width=(\d*\.?\d+%?))?\s*/>";
+        private float _fillAmount = 1.0f;
+        private FillMethod _fillMethod = FillMethod.None;
+
+        // refer: http://blog.useasp.net/archive/2013/06/14/use-regular-expression-to-parse-html-tags-attributes-method-with-csharp.aspx
+        private static readonly string _spriteTagPattern = @"<quad(?:\s+(\w+)\s*=\s*(?<quota>['""]?)([\w\/]+)\k<quota>)+\s*\/>";
         private static readonly Regex _spriteTagRegex = new Regex(_spriteTagPattern, RegexOptions.Singleline);
     }
 }

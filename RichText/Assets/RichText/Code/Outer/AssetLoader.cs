@@ -42,7 +42,7 @@ namespace Unique.RichText
             }
 
             var spriteAsset = SpriteData.Create(texture, inlineSpriteAsset.spriteItems);
-            RichManager.Instance.AddSpriteData(assetPath, spriteAsset);
+            SpriteDataManager.Instance.Add(assetPath, spriteAsset);
         }
 
         public string[] GetSpriteAssetPaths ()
@@ -50,7 +50,7 @@ namespace Unique.RichText
             return _spriteAssetPaths;
         }
 
-        private readonly string[] _spriteAssetPaths = new string[] { "emoji/default_emoji", "emoji/fruit" };
+        private readonly string[] _spriteAssetPaths = new string[] { "emoji/default_emoji", "emoji/fruit", "emoji/bloodbar" };
 
         public static AssetLoader Instance = new AssetLoader();
     }

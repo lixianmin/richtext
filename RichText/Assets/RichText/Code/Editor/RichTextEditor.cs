@@ -21,6 +21,7 @@ namespace Unique.RichText
         {
             base.OnEnable();
 
+            var serializedObject = this.serializedObject;
             m_Text = serializedObject.FindProperty("m_Text");
             m_FontData = serializedObject.FindProperty("m_FontData");
         }

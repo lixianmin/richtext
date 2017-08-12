@@ -27,23 +27,21 @@ namespace Unique.RichText
             {
                 var currentCanvas = canvasArray[0];
                 var spriteAssetPaths = AssetLoader.Instance.GetSpriteAssetPaths();
-                for (int i= 0; i< spriteAssetPaths.Length; ++i)
+                for (int i= 0; i< spriteAssetPaths.Length - 1; ++i)
                 {
                     var assetPath = spriteAssetPaths[i];
                     var goParent = new GameObject(assetPath);
                     goParent.transform.SetParent(currentCanvas.transform, false);
 
                     var parent = goParent.transform;
-                    var spriteData = RichManager.Instance.GetSpriteData(assetPath);
-
-                    _CreateRichText(parent, spriteData);
+                    _CreateRichText(parent, assetPath);
                 }
 
                 StartCoroutine(_CoUpdateSprite()); 
             }
         }
 
-        private void _CreateRichText (Transform parent, SpriteData spriteData)
+        private void _CreateRichText (Transform parent, string spriteDataPath)
         {
             var count = 200;
             for (int i= 0; i< count; ++i)
@@ -58,9 +56,8 @@ namespace Unique.RichText
 
                 var richText = go.AddComponent<RichText>();
                 richText.font =  Resources.GetBuiltinResource<Font>("Arial.ttf");
-                richText.text = "测试用的文字  <quad name=meat_1 size=96/> 尾巴";
+                richText.text = string.Format("测试用的文字  <quad name=meat_1 src={0} width=96 height=96/> 尾巴", spriteDataPath);
                 richText.fontSize = 24;
-                richText.SetSpriteData(spriteData);
 
                 go.transform.SetParent(parent, false);
                 go.name = "RichText_" + i.ToString();
@@ -88,18 +85,12 @@ namespace Unique.RichText
                 var richTexts = FindObjectsOfType<RichText>();
                 foreach (var richText in richTexts)
                 {
-                    var spriteData = richText.GetSpriteData();
-                    if (null == spriteData)
-                    {
-                        continue;
-                    }
-
                     var tags = richText.GetSpriteTags();
                     var count = tags.Count;
                     for (int i= 0; i< count; ++i)
                     {
                         var tag = tags[i];
-                        var spriteItem = spriteData.GetRandomSpriteItem();
+                        var spriteItem = tag.GetSpriteData().GetRandomSpriteItem();
                         tag.SetName(spriteItem.name);
 
                         richText.SetVerticesDirty();
