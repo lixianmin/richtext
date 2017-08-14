@@ -1,5 +1,5 @@
 
-Shader "Unique/RichText"
+Shader "Unique/UI/RichText"
 {
 	Properties
 	{

@@ -9,7 +9,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     /// <summary>
     /// 表情图片序列化信息

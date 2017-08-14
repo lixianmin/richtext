@@ -8,7 +8,7 @@ author:     lixianmin
 using System.Collections;
 using UnityEngine;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     public class SpriteDataManager
     {

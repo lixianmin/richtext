@@ -14,7 +14,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     public class MBBloodBarTest : MonoBehaviour
     {

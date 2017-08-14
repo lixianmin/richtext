@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     [CustomEditor(typeof(SpriteAsset))]
     public class InlineSpriteAssetEditor : Editor

@@ -11,7 +11,7 @@ using System.IO;
 using UnityEngine;
 using UnityEditor;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     public static class CreateSpriteAsset
     {

@@ -10,7 +10,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 { 
     internal class MaterialManager
     {
@@ -88,7 +88,7 @@ namespace Unique.RichText
         {
             if (null == _richTextShader)
             {
-                _richTextShader = Shader.Find("Unique/RichText");
+                _richTextShader = Shader.Find("Unique/UI/RichText");
             }
 
             return _richTextShader;

@@ -249,7 +249,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -199.99995, y: 0}
+  m_AnchoredPosition: {x: -200, y: 4}
   m_SizeDelta: {x: 400, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &597998942
@@ -273,10 +273,10 @@ MonoBehaviour:
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 14
+    m_FontSize: 18
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 1
     m_MaxSize: 40
     m_Alignment: 0
     m_AlignByGeometry: 0
@@ -284,7 +284,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "<quad name=foreground src=emoji/bloodbar width=96 height=12 />\n\u8FD9\u91CC\u662F\u5934\u9876\u7684\u5B57\n\u53C8\u4E00\u884C\u5B57\n\u4E5F\u8BB8\u5B57\u7684\u989C\u8272\u5E94\u8BE5\u53D8\u4E00\u4E0B"
+  m_Text: "<quad name=foreground src=emoji/bloodbar width=96 height=12 />\n<color=lime>\u8FD9\u91CC\u662F\u5934\u9876\u7684\u5B57</color>\n<color=#ffa500ff>\u989C\u8272\u652F\u6301#ffa500ff\u683C\u5F0F\uFF0C\u652F\u6301\u900F\u660E\u5EA6</color>\n<b>\u8FD9\u4E00\u884C\u5B57\u662F\u7C97\u7684</b>\n<i>\u8FD9\u4E00\u884C\u5B57\u662F\u659C\u7684</i>\n<size=24>\u8FD9\u4E00\u884C\u5B57\u662F\u5927\u7684</size>"
 --- !u!222 &597998943
 CanvasRenderer:
   m_ObjectHideFlags: 0

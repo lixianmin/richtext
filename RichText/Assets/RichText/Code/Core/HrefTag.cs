@@ -10,7 +10,7 @@
 //using UnityEngine;
 //using UnityEngine.UI;
 //
-//namespace Unique.RichText
+//namespace Unique.UI.RichText
 //{
 //    /// <summary>
 //    /// 超链接信息类

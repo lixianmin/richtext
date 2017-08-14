@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.UI;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     [CustomEditor(typeof(RichText))]
     [CanEditMultipleObjects]

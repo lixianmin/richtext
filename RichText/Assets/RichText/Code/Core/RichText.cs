@@ -13,7 +13,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     [ExecuteInEditMode]
     public partial class RichText : Text

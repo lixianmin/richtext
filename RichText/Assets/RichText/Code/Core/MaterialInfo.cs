@@ -10,7 +10,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     internal class MaterialInfo
     {

@@ -10,7 +10,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEditor;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     public class CreateRichTextMenu
     {

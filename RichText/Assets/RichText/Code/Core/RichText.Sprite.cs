@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Unique.RichText
+namespace Unique.UI.RichText
 {
     partial class RichText
     {
