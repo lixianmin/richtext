@@ -54,5 +54,6 @@ mac os + Unity3d 2017.1.0f3 (64bit)
 
 1. [Unity3D游戏优化之头顶UI](https://zhuanlan.zhihu.com/p/25670078)
 2. [RichText](https://docs.unity3d.com/Manual/StyledText.html)
-3. [Unity-EmojiText](https://github.com/carlosCn/Unity-EmojiText)
+3.  [Unity UGUI图文混排](http://blog.csdn.net/column/details/13021.html)
+4. [Unity-EmojiText](https://github.com/carlosCn/Unity-EmojiText)
 
