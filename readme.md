@@ -17,7 +17,7 @@
 
 使用到的测试用例，结点结构如下：
 
-![DrawCall测试布局](https://raw.githubusercontent.com/lixianmin/richtext/master/readme/images/drawcall-test-layout.jpg)
+![DrawCall测试布局](https://raw.githubusercontent.com/lixianmin/richtext/master/readme/images/drawcall-layout.jpg)
 
  从图中也可以看到，水果图标的节点总是在小黑猫（默认图标）节点的后面绘制，从而在结构上保证了drawcall数较低。
 
