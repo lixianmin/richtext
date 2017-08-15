@@ -6,12 +6,8 @@ author:     lixianmin
 *********************************************************************/
 
 using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using UnityEngine.Events;
 
 namespace Unique.UI.RichText
 {
