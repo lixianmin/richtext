@@ -23,7 +23,7 @@ namespace Unique.UI.RichText
 
         public static GameObject CreateRichText ()
         {
-            GameObject go = MenuOptions.CreateUIElementRoot("RichText", s_ThickElementSize);
+            GameObject go = DefaultControls.CreateUIElementRoot("RichText", s_ThickElementSize);
 
             var lbl = go.AddComponent<RichText>();
             lbl.text = "New RichText";

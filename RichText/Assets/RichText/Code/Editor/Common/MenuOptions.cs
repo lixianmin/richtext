@@ -137,14 +137,6 @@ namespace Unique
             }
         }
 
-        public static GameObject CreateUIElementRoot (string name, Vector2 size)
-        {
-            GameObject child = new GameObject(name);
-            RectTransform rectTransform = child.AddComponent<RectTransform>();
-            rectTransform.sizeDelta = size;
-            return child;
-        }
-
         static private DefaultControls.Resources s_StandardResources;
         static public DefaultControls.Resources GetStandardResources ()
         {
