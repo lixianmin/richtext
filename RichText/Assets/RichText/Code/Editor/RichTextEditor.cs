@@ -4,6 +4,7 @@ created:    2017-08-07
 author:     lixianmin
 
 *********************************************************************/
+using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UI;
@@ -14,9 +15,6 @@ namespace Unique.UI.RichText
     [CanEditMultipleObjects]
     public class TextEditor : GraphicEditor
     {
-        SerializedProperty m_Text;
-        SerializedProperty m_FontData;
-
         protected override void OnEnable()
         {
             base.OnEnable();
@@ -24,11 +22,25 @@ namespace Unique.UI.RichText
             var serializedObject = this.serializedObject;
             m_Text = serializedObject.FindProperty("m_Text");
             m_FontData = serializedObject.FindProperty("m_FontData");
+
+            _lpfnParseText = System.Delegate.CreateDelegate(typeof(Action), serializedObject.targetObject, "_ParseText") as Action;
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+
+            var currentTextString = m_Text.stringValue;
+            if (_lastTextString != currentTextString)
+            {
+                _lastTextString = currentTextString;
+
+                var richText = serializedObject.targetObject as RichText;
+                if (richText.IsActive() && null != _lpfnParseText)
+                {
+                    _lpfnParseText();
+                }
+            }
 
             EditorGUILayout.PropertyField(m_Text);
             EditorGUILayout.PropertyField(m_FontData);
@@ -38,5 +50,11 @@ namespace Unique.UI.RichText
 
 //            DrawDefaultInspector();
         }
+
+        private SerializedProperty m_Text;
+        private SerializedProperty m_FontData;
+
+        private string _lastTextString;
+        private Action _lpfnParseText;
     }
 }

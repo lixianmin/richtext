@@ -158,20 +158,6 @@ namespace Unique.UI.RichText
             m_DisableFontTextureRebuiltCallback = false;
         }
 
-        #if UNITY_EDITOR
-        protected override void OnValidate()
-        {
-            base.OnValidate();
-
-            if (!IsActive())
-            {
-                return;
-            }
-
-            _ParseText();
-        }
-        #endif
-
         private readonly UIVertex[] _tempVerts = new UIVertex[4];
         private string _parseOutputText;
     }
