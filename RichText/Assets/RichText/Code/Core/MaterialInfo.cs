@@ -32,7 +32,7 @@ namespace Unique.UI.RichText
             }
 
             target.material = _material;
-            _fans.Add(target, this);
+            _observers.Add(target, this);
         }
 
         public void Detach (Graphic target)
@@ -42,7 +42,7 @@ namespace Unique.UI.RichText
                 return;
             }
 
-            _fans.Remove(target);
+            _observers.Remove(target);
         }
 
         public Material GetMaterial ()
@@ -52,10 +52,10 @@ namespace Unique.UI.RichText
 
         public int GetCount ()
         {
-            return _fans.Count;
+            return _observers.Count;
         }
 
         private Material _material;
-        private readonly Hashtable _fans = new Hashtable();
+        private readonly Hashtable _observers = new Hashtable();
     }
 }

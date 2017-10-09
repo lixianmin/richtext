@@ -75,8 +75,8 @@ namespace Unique.UI.RichText
             else if (key == "src")
             {
                 var path = val;
-                var spriteData = SpriteDataManager.Instance.Get(path);
-                _SetSpriteAtlas(spriteData);
+                var atlas = UIAtlasManager.Instance.Get(path);
+                _SetAtlas(atlas);
             }
             else if (key == "width")
             {
@@ -164,11 +164,11 @@ namespace Unique.UI.RichText
             return _fillAmount;
         }
 
-        private void _SetSpriteAtlas (SpriteAtlas spriteAtlas)
+        private void _SetAtlas (UIAtlas atlas)
         {
-            _spriteAtlas = spriteAtlas;
+            _atlas = atlas;
 
-            if (null == spriteAtlas)
+            if (null == atlas)
             {
                 return;
             }
@@ -177,10 +177,7 @@ namespace Unique.UI.RichText
             var mat = richText.material;
             var manager = MaterialManager.Instance;
             var lastSpriteTexture = manager.GetSpriteAtlas(mat);
-
-            var sprites = new Sprite[spriteAtlas.spriteCount];
-            spriteAtlas.GetSprites(sprites);
-            var spriteTexture = sprites[0].texture;
+            var spriteTexture = atlas.GetTexture();
 
             var isTextureChanged = lastSpriteTexture != spriteTexture;
             if (isTextureChanged)
@@ -190,13 +187,13 @@ namespace Unique.UI.RichText
             }
         }
 
-        public SpriteAtlas GetSpriteAtlas ()
+        public UIAtlas GetAtlas ()
         {
-            return _spriteAtlas;
+            return _atlas;
         }
 
         private RichText _richText;
-        private SpriteAtlas _spriteAtlas;
+        private UIAtlas  _atlas;
 
         private string _name;
         private int _vertexIndex;

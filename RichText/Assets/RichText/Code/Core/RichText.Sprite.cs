@@ -44,13 +44,13 @@ namespace Unique.UI.RichText
             {
                 SpriteTag spriteTag = spriteTags[i];
                 var name = spriteTag.GetName();
-                var spriteAtlas = spriteTag.GetSpriteAtlas();
-                if (string.IsNullOrEmpty(name) || null == spriteAtlas)
+                var atlas = spriteTag.GetAtlas();
+                if (string.IsNullOrEmpty(name) || null == atlas)
                 {
                     continue;
                 }
 
-                var sprite = spriteAtlas.GetSprite(name);
+                var sprite = atlas.GetSprite(name);
                 if (null == sprite)
                 {
                     continue;

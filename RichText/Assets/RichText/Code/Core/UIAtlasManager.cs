@@ -11,7 +11,7 @@ using UnityEngine.U2D;
 
 namespace Unique.UI.RichText
 {
-    public class SpriteDataManager
+    public class UIAtlasManager
     {
         public void Add (string key, SpriteAtlas spriteAtlas)
         {
@@ -20,13 +20,13 @@ namespace Unique.UI.RichText
                 return;
             }
 
-            _atlasMap[key] = spriteAtlas;
+            _atlasMap[key] = new UIAtlas(spriteAtlas);
         }
 
-        public SpriteAtlas Get (string key)
+        public UIAtlas Get (string key)
         {
             key = key ?? string.Empty;
-            var sprite = _atlasMap[key] as SpriteAtlas;
+            var sprite = _atlasMap[key] as UIAtlas;
             return sprite;
         }
 
@@ -38,11 +38,23 @@ namespace Unique.UI.RichText
 
         public void Clear ()
         {
-            _atlasMap.Clear();
+            if (_atlasMap.Count > 0)
+            {
+                var iter = _atlasMap.GetEnumerator();
+                while (iter.MoveNext())
+                {
+                    var atlas = iter.Value as UIAtlas;
+                    if (null != atlas)
+                    {
+                        atlas.Dispose();
+                    }
+                }
+
+                _atlasMap.Clear();
+            }
         }
 
         private readonly Hashtable _atlasMap = new Hashtable();
-
-        public static readonly SpriteDataManager Instance = new SpriteDataManager();
+        public static readonly UIAtlasManager Instance = new UIAtlasManager();
     }
 }

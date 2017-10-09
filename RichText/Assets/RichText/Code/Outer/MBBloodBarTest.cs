@@ -40,6 +40,11 @@ namespace Unique.UI.RichText
             }
         }
 
+        private void OnDestroy ()
+        {
+            UIAtlasManager.Instance.Clear();
+        }
+
         public RichText foregroundRichText;
     }
 }

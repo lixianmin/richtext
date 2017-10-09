@@ -34,7 +34,7 @@ namespace Unique.UI.RichText
                 return;
             }
 
-            SpriteDataManager.Instance.Add(assetPath, spriteAtlas);
+            UIAtlasManager.Instance.Add(assetPath, spriteAtlas);
         }
 
         public string[] GetSpriteAssetPaths ()
