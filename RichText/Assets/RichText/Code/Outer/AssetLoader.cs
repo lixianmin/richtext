@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-
+using UnityEngine.U2D;
 
 namespace Unique.UI.RichText
 {
@@ -21,28 +21,20 @@ namespace Unique.UI.RichText
         {
             foreach (var assetPath in _spriteAssetPaths)
             {
-                _LoadSpriteAsset(assetPath);
+                _LoadSpriteAtlas(assetPath);
             }    
         }
 
-        private void _LoadSpriteAsset (string assetPath)
+        private void _LoadSpriteAtlas (string assetPath)
         {
-            var inlineSpriteAsset = Resources.Load<SpriteAsset>(assetPath);
-            if (null == inlineSpriteAsset)
+            var spriteAtlas = Resources.Load<SpriteAtlas>(assetPath);
+            if (null == spriteAtlas)
             {
-                Debug.LogErrorFormat("inlineSpriteAsset=null, assetPath={0}", assetPath);
+                Debug.LogErrorFormat("spriteAtlas=null, assetPath={0}", assetPath);
                 return;
             }
 
-            var texture = inlineSpriteAsset.texture;
-            if (null == texture)
-            {
-                Debug.LogErrorFormat("texture=null, assetPath={0}", assetPath);
-                return;
-            }
-
-            var spriteAsset = SpriteData.Create(texture, inlineSpriteAsset.spriteItems);
-            SpriteDataManager.Instance.Add(assetPath, spriteAsset);
+            SpriteDataManager.Instance.Add(assetPath, spriteAtlas);
         }
 
         public string[] GetSpriteAssetPaths ()

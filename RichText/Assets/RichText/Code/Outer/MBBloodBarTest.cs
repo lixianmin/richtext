@@ -13,7 +13,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-
 namespace Unique.UI.RichText
 {
     public class MBBloodBarTest : MonoBehaviour

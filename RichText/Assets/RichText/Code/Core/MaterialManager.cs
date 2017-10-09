@@ -73,7 +73,7 @@ namespace Unique.UI.RichText
             }
         }
 
-        public Texture GetSpriteTexture (Material mat)
+        public Texture GetSpriteAtlas (Material mat)
         {
             if (null != mat && mat.shader == _GetRichTextShader())
             {

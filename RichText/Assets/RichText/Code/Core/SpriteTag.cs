@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.U2D;
 
 namespace Unique.UI.RichText
 {
@@ -75,7 +76,7 @@ namespace Unique.UI.RichText
             {
                 var path = val;
                 var spriteData = SpriteDataManager.Instance.Get(path);
-                _SetSpriteData(spriteData);
+                _SetSpriteAtlas(spriteData);
             }
             else if (key == "width")
             {
@@ -163,11 +164,11 @@ namespace Unique.UI.RichText
             return _fillAmount;
         }
 
-        private void _SetSpriteData (SpriteData spriteData)
+        private void _SetSpriteAtlas (SpriteAtlas spriteAtlas)
         {
-            _spriteData = spriteData;
+            _spriteAtlas = spriteAtlas;
 
-            if (null == spriteData)
+            if (null == spriteAtlas)
             {
                 return;
             }
@@ -175,8 +176,11 @@ namespace Unique.UI.RichText
             var richText = _richText;
             var mat = richText.material;
             var manager = MaterialManager.Instance;
-            var lastSpriteTexture = manager.GetSpriteTexture(mat);
-            var spriteTexture = spriteData.GetTexture();
+            var lastSpriteTexture = manager.GetSpriteAtlas(mat);
+
+            var sprites = new Sprite[spriteAtlas.spriteCount];
+            spriteAtlas.GetSprites(sprites);
+            var spriteTexture = sprites[0].texture;
 
             var isTextureChanged = lastSpriteTexture != spriteTexture;
             if (isTextureChanged)
@@ -186,13 +190,13 @@ namespace Unique.UI.RichText
             }
         }
 
-        public SpriteData GetSpriteData ()
+        public SpriteAtlas GetSpriteAtlas ()
         {
-            return _spriteData;
+            return _spriteAtlas;
         }
 
         private RichText _richText;
-        private SpriteData _spriteData;
+        private SpriteAtlas _spriteAtlas;
 
         private string _name;
         private int _vertexIndex;

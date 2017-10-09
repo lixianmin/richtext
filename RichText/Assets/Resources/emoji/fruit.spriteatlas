@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: fruit
+  m_EditorData:
+    textureSettings:
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 1024
+      textureCompression: 1
+      colorSpace: 1
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 1
+    platformSettings: []
+    packingParameters:
+      paddingPower: 2
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 1
+      enableTightPacking: 0
+    packedHash:
+      serializedVersion: 2
+      Hash: a59310cdac5f765c3d904c34c2b65dee
+    variantMultiplier: 1
+    bindAsDefault: 1
+    finalFormat: 47
+    hashString: a59310cdac5f765c3d904c34c2b65dee
+    totalSpriteSurfaceArea: 591302
+    packables:
+    - {fileID: 2800000, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+    packedSpriteRenderDataKeys:
+    - 4ae12ff0909bb442d9073188786befb1: 21300000
+    - 4ae12ff0909bb442d9073188786befb1: 21300016
+    - 4ae12ff0909bb442d9073188786befb1: 21300006
+    - 4ae12ff0909bb442d9073188786befb1: 21300004
+    - 4ae12ff0909bb442d9073188786befb1: 21300022
+    - 4ae12ff0909bb442d9073188786befb1: 21300030
+    - 4ae12ff0909bb442d9073188786befb1: 21300002
+    - 4ae12ff0909bb442d9073188786befb1: 21300028
+    - 4ae12ff0909bb442d9073188786befb1: 21300032
+    - 4ae12ff0909bb442d9073188786befb1: 21300024
+    - 4ae12ff0909bb442d9073188786befb1: 21300008
+    - 4ae12ff0909bb442d9073188786befb1: 21300014
+    - 4ae12ff0909bb442d9073188786befb1: 21300034
+    - 4ae12ff0909bb442d9073188786befb1: 21300018
+    - 4ae12ff0909bb442d9073188786befb1: 21300038
+    - 4ae12ff0909bb442d9073188786befb1: 21300020
+    - 4ae12ff0909bb442d9073188786befb1: 21300026
+    - 4ae12ff0909bb442d9073188786befb1: 21300036
+    - 4ae12ff0909bb442d9073188786befb1: 21300010
+    - 4ae12ff0909bb442d9073188786befb1: 21300012
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300016, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300006, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300004, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300022, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300030, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300002, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300028, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300032, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300024, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300008, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300014, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300034, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300018, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300038, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300020, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300026, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300036, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300010, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  - {fileID: 21300012, guid: 4ae12ff0909bb442d9073188786befb1, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - fruit_0
+  - fruit_8
+  - fruit_3
+  - fruit_2
+  - fruit_11
+  - fruit_15
+  - fruit_1
+  - fruit_14
+  - fruit_16
+  - fruit_12
+  - fruit_4
+  - fruit_7
+  - fruit_17
+  - fruit_9
+  - fruit_19
+  - fruit_10
+  - fruit_13
+  - fruit_18
+  - fruit_5
+  - fruit_6
+  m_Tag: fruit
+  m_IsVariant: 0

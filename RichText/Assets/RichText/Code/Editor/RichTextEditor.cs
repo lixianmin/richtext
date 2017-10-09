@@ -26,7 +26,7 @@ namespace Unique.UI.RichText
             _lpfnParseText = System.Delegate.CreateDelegate(typeof(Action), serializedObject.targetObject, "_ParseText") as Action;
         }
 
-        public override void OnInspectorGUI()
+        public override void OnInspectorGUI ()
         {
             serializedObject.Update();
 

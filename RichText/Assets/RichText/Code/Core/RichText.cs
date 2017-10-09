@@ -32,7 +32,7 @@ namespace Unique.UI.RichText
         protected override void OnDestroy ()
         {
             var manager = MaterialManager.Instance;
-            var lastSpriteTexture = manager.GetSpriteTexture(material);
+            var lastSpriteTexture = manager.GetSpriteAtlas(material);
             manager.DetachTexture(this, lastSpriteTexture);
 
             base.OnDestroy();

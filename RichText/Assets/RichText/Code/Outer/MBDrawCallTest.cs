@@ -43,7 +43,7 @@ namespace Unique.UI.RichText
 
         private void _CreateRichText (Transform parent, string spriteDataPath)
         {
-            var count = 200;
+            var count = 1;
             for (int i= 0; i< count; ++i)
             {
                 var go = new GameObject();
@@ -76,8 +76,33 @@ namespace Unique.UI.RichText
             _richTextObjects.Clear();
         }
 
+        private Sprite[] _GetAtlasSprites (Hashtable spritesTable, UnityEngine.U2D.SpriteAtlas spriteAtlas)
+        {
+            var sprites = spritesTable[spriteAtlas] as Sprite[];
+            if (null == sprites)
+            {
+                sprites = new Sprite[spriteAtlas.spriteCount];
+                spriteAtlas.GetSprites(sprites);
+
+                foreach (var item in sprites)
+                {
+                    if (null != item)
+                    {
+                        var name = item.name;
+                        item.name = name.Substring(0, name.Length - 7);
+                    }
+                }
+
+                spritesTable[spriteAtlas] = sprites;
+            }
+
+            return sprites;
+        }
+
         private IEnumerator _CoUpdateSprite ()
         {
+            var spritesTable = new Hashtable();
+
             while (true)
             {
                 yield return new WaitForSeconds(0.2f);
@@ -90,8 +115,12 @@ namespace Unique.UI.RichText
                     for (int i= 0; i< count; ++i)
                     {
                         var tag = tags[i];
-                        var spriteItem = tag.GetSpriteData().GetRandomSpriteItem();
-                        tag.SetName(spriteItem.name);
+
+                        var spriteAtlas = tag.GetSpriteAtlas();
+                        var sprites = _GetAtlasSprites(spritesTable, spriteAtlas);
+
+                        var sprite = sprites[UnityEngine.Random.Range(0, sprites.Length)];
+                        tag.SetName(sprite.name);
 
                         richText.SetVerticesDirty();
                     }

@@ -44,14 +44,14 @@ namespace Unique.UI.RichText
             {
                 SpriteTag spriteTag = spriteTags[i];
                 var name = spriteTag.GetName();
-                var spriteData = spriteTag.GetSpriteData();
-                if (string.IsNullOrEmpty(name) || null == spriteData)
+                var spriteAtlas = spriteTag.GetSpriteAtlas();
+                if (string.IsNullOrEmpty(name) || null == spriteAtlas)
                 {
                     continue;
                 }
 
-                SpriteItem spriteItem = spriteData.GetSpriteItem(name);
-                if (null == spriteItem)
+                var sprite = spriteAtlas.GetSprite(name);
+                if (null == sprite)
                 {
                     continue;
                 }
@@ -59,16 +59,16 @@ namespace Unique.UI.RichText
                 switch (spriteTag.GetFillMethod())
                 {
                     case SpriteTag.FillMethod.None:
-                        _SetSpriteVertex_FillMethod_None(toFill, spriteTag, spriteItem);
+                        _SetSpriteVertex_FillMethod_None(toFill, spriteTag, sprite);
                         break;
                     case SpriteTag.FillMethod.Horizontal:
-                        _SetSpriteVertex_FillMethod_Horizontal(toFill, spriteTag, spriteItem);
+                        _SetSpriteVertex_FillMethod_Horizontal(toFill, spriteTag, sprite);
                         break;
                 }
             }
         }
 
-        private void _SetSpriteVertex_FillMethod_None (VertexHelper toFill, SpriteTag spriteTag, SpriteItem spriteItem)
+        private void _SetSpriteVertex_FillMethod_None (VertexHelper toFill, SpriteTag spriteTag, Sprite sprite)
         {
             UIVertex v = UIVertex.simpleVert;
             var vertexIndex = spriteTag.GetVertexIndex() * 4;
@@ -82,30 +82,35 @@ namespace Unique.UI.RichText
             Vector3 textPos = v.position;
             var tagSize = spriteTag.GetSize();
             float xOffset   = spriteTag.GetOffset() * tagSize.x;
-            var rect = spriteItem.rect;
+
+            var texture = sprite.texture;
+            var textureWidthInv = 1.0f / texture.width;
+            var textureHeightInv = 1.0f / texture.height;
+            var uvRect = sprite.textureRect;
+            uvRect = new Rect(uvRect.x * textureWidthInv, uvRect.y * textureHeightInv, uvRect.width * textureWidthInv, uvRect.height * textureHeightInv);
 
             // pos = (0, 0)
             var position = new Vector3(xOffset, 0, 0) + textPos;
-            var uv0 = new Vector2(rect.x, rect.y);
+            var uv0 = new Vector2(uvRect.x, uvRect.y);
             _SetSpriteVertex(toFill, vertexIndex, position, uv0);
 
             // pos = (1, 0)
             position = new Vector3(xOffset + tagSize.x , 0, 0) + textPos;
-            uv0 = new Vector2(rect.x + rect.width, rect.y);
+            uv0 = new Vector2(uvRect.x + uvRect.width, uvRect.y);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
             // pos = (1, 1)
             position = new Vector3(xOffset + tagSize.x , tagSize.y, 0) + textPos;
-            uv0 = new Vector2(rect.x + rect.width, rect.y + rect.height);
+            uv0 = new Vector2(uvRect.x + uvRect.width, uvRect.y + uvRect.height);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
             // pos = (0, 1)
             position = new Vector3(xOffset, tagSize.y, 0) + textPos;
-            uv0 = new Vector2(rect.x, rect.y + rect.height);
+            uv0 = new Vector2(uvRect.x, uvRect.y + uvRect.height);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
         }
 
-        private void _SetSpriteVertex_FillMethod_Horizontal (VertexHelper toFill, SpriteTag spriteTag, SpriteItem spriteItem)
+        private void _SetSpriteVertex_FillMethod_Horizontal (VertexHelper toFill, SpriteTag spriteTag, Sprite sprite)
         {
             UIVertex v = UIVertex.simpleVert;
             var vertexIndex = spriteTag.GetVertexIndex() * 4;
@@ -119,28 +124,33 @@ namespace Unique.UI.RichText
             Vector3 textPos = v.position;
             var tagSize = spriteTag.GetSize();
             float xOffset   = spriteTag.GetOffset() * tagSize.x;
-            var rect = spriteItem.rect;
+
+            var texture = sprite.texture;
+            var textureWidthInv = 1.0f / texture.width;
+            var textureHeightInv = 1.0f / texture.height;
+            var uvRect = sprite.textureRect;
+            uvRect = new Rect(uvRect.x * textureWidthInv, uvRect.y * textureHeightInv, uvRect.width * textureWidthInv, uvRect.height * textureHeightInv);
 
             // pos = (0, 0)
             var position = new Vector3(xOffset, 0, 0) + textPos;
-            var uv0 = new Vector2(rect.x, rect.y);
+            var uv0 = new Vector2(uvRect.x, uvRect.y);
             _SetSpriteVertex(toFill, vertexIndex, position, uv0);
 
             var fillAmount = spriteTag.GetFillAmount();
 
             // pos = (1, 0)
             position = new Vector3(xOffset + tagSize.x * fillAmount , 0, 0) + textPos;
-            uv0 = new Vector2(rect.x + rect.width * fillAmount, rect.y);
+            uv0 = new Vector2(uvRect.x + uvRect.width * fillAmount, uvRect.y);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
             // pos = (1, 1)
             position = new Vector3(xOffset + tagSize.x * fillAmount , tagSize.y, 0) + textPos;
-            uv0 = new Vector2(rect.x + rect.width * fillAmount, rect.y + rect.height);
+            uv0 = new Vector2(uvRect.x + uvRect.width * fillAmount, uvRect.y + uvRect.height);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
 
             // pos = (0, 1)
             position = new Vector3(xOffset, tagSize.y, 0) + textPos;
-            uv0 = new Vector2(rect.x, rect.y + rect.height);
+            uv0 = new Vector2(uvRect.x, uvRect.y + uvRect.height);
             _SetSpriteVertex(toFill, ++vertexIndex, position, uv0);
         }
 
